@@ -62,3 +62,11 @@ cute_test(testlangselectmanual Cutelyst2Qt5::Utils::LangSelect Cutelyst2Qt5::Ses
 if (PLUGIN_CSRFPROTECTION)
 #    cute_test(testcsrfprotection Cutelyst2Qt5::CSRFProtection "" "")
 endif(PLUGIN_CSRFPROTECTION)
+if (PLUGIN_FORMS)
+    cute_test(testforms Cutelyst2Qt5::Forms Qt5::Qml "")
+    target_compile_definitions(testforms_exec
+        PRIVATE
+            FORMS_IMPORT_DIR="${CMAKE_BINARY_DIR}/Cutelyst/Plugins/Forms/imports"
+            TESTFORMS_DIR="${CMAKE_SOURCE_DIR}/tests/formstestdata"
+    )
+endif (PLUGIN_FORMS)

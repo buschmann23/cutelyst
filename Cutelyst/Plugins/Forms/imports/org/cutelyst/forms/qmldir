@@ -1,0 +1,4 @@
+module org.cutelyst.forms
+plugin Cutelyst2Qt5FormsQml
+classname QmlCutelystFormsPlugin
+typeinfo plugins.qmltypes
