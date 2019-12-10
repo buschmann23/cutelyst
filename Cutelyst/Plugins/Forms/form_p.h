@@ -21,6 +21,7 @@ public:
     Form::EncType enctype = Form::WwwFormUrlEncoded;
     Form::Method method = Form::Get;
     Form::Target target = Form::Self;
+    Form::Type type = Form::Vertical;
     bool autocomplete = true;
     bool novalidate = false;
 

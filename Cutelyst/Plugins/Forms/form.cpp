@@ -145,6 +145,18 @@ void Form::setDescription(const QString &description)
     d->description = description;
 }
 
+Cutelyst::Form::Type Form::type() const
+{
+    Q_D(const Form);
+    return d->type;
+}
+
+void Form::setType(Cutelyst::Form::Type type)
+{
+    Q_D(Form);
+    d->type = type;
+}
+
 QQmlListProperty<Cutelyst::Fieldset> Form::fieldsets()
 {
     return QQmlListProperty<Fieldset>(this, this,

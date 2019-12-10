@@ -29,6 +29,7 @@ class CUTELYST_PLUGIN_FORMS_EXPORT Form : public FormHtmlElement
     Q_PROPERTY(QString description READ description WRITE setDescription)
     Q_PROPERTY(QQmlListProperty<Cutelyst::Fieldset> fieldsets READ fieldsets)
     Q_PROPERTY(QQmlListProperty<Cutelyst::Button> buttons READ buttons)
+    Q_PROPERTY(Cutelyst::Form::Type type READ type WRITE setType)
     Q_CLASSINFO("DefaultProperty", "fieldsets")
 public:
     explicit Form(QObject *parent = nullptr);
@@ -54,6 +55,13 @@ public:
         Top
     };
     Q_ENUM(Target)
+
+    enum Type : quint8 {
+        Vertical    = 0,
+        Horizontal  = 1,
+        Inline      = 2
+    };
+    Q_ENUM(Type)
 
     QUrl action() const;
     void setAction(const QUrl &action);
@@ -84,6 +92,9 @@ public:
 
     QString description() const;
     void setDescription(const QString &description);
+
+    Cutelyst::Form::Type type() const;
+    void setType(Cutelyst::Form::Type type);
 
     QQmlListProperty<Cutelyst::Fieldset> fieldsets();
     void appendFieldset(Fieldset *fieldset);
