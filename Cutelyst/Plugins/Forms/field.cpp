@@ -73,4 +73,16 @@ void Field::setDescription(const QString &description)
     d->description = description;
 }
 
+int Field::colspan() const
+{
+    Q_D(const Field);
+    return d->colspan;
+}
+
+void Field::setColspan(int colspan)
+{
+    Q_D(Field);
+    d->colspan = colspan;
+}
+
 #include "moc_field.cpp"

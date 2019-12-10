@@ -14,6 +14,7 @@ public:
     QString name;
     QString label;
     QString description;
+    int colspan = 0;
     Field::Type type = Field::Text;
 
 private:

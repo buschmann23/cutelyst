@@ -15,6 +15,7 @@ class CUTELYST_PLUGIN_FORMS_EXPORT Field : public FormHtmlElement
     Q_PROPERTY(QString name READ name WRITE setName)
     Q_PROPERTY(QString label READ label WRITE setLabel)
     Q_PROPERTY(QString description READ description WRITE setDescription)
+    Q_PROPERTY(int colspan READ colspan WRITE setColspan)
 public:
     explicit Field(QObject *parent = nullptr);
     virtual ~Field() override;
@@ -54,6 +55,9 @@ public:
 
     QString description() const;
     void setDescription(const QString &description);
+
+    int colspan() const;
+    void setColspan(int colspan);
 
 protected:
     Field(FieldPrivate &dd, QObject *parent = nullptr);
