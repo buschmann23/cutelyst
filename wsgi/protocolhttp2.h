@@ -20,6 +20,9 @@
 
 #include <QObject>
 
+#include <enginerequest.h>
+#include <context.h>
+
 #include "protocol.h"
 #include "socket.h"
 #include "hpack.h"
@@ -41,7 +44,7 @@ public:
 };
 
 class ProtoRequestHttp2;
-class H2Stream : public Cutelyst::EngineRequest
+class H2Stream final : public Cutelyst::EngineRequest
 {
 public:
     enum State {
@@ -73,7 +76,7 @@ public:
     bool gotPath = false;
 };
 
-class ProtoRequestHttp2 : public ProtocolData
+class ProtoRequestHttp2 final : public ProtocolData
 {
     Q_GADGET
 public:
@@ -89,8 +92,18 @@ public:
         pktsize = 0;
         delete hpack;
         hpack = nullptr;
-        qDeleteAll(streams);
+
+        auto it = streams.constBegin();
+        while (it != streams.constEnd()) {
+            if (it.value()->status & Cutelyst::EngineRequest::Async) {
+                it.value()->context->deleteLater();
+                it.value()->context = nullptr;
+            }
+            delete it.value();
+            ++it;
+        }
         streams.clear();
+
         headersBuffer.clear();
         maxStreamId = 0;
         streamForContinuation = 0;
@@ -117,7 +130,7 @@ public:
     QHash<quint32, H2Stream *> streams;
 };
 
-class ProtocolHttp2 : public Protocol
+class ProtocolHttp2 final : public Protocol
 {
 public:
     explicit ProtocolHttp2(WSGI *wsgi);

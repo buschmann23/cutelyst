@@ -27,7 +27,7 @@
 namespace CWSGI {
 
 class WSGI;
-class ProtoRequestFastCGI : public ProtocolData, public Cutelyst::EngineRequest
+class ProtoRequestFastCGI final : public ProtocolData, public Cutelyst::EngineRequest
 {
     Q_GADGET
 public:
@@ -50,7 +50,11 @@ public:
         ProtocolData::resetData();
 
         // EngineRequest
-        delete context;
+        if (status & EngineRequest::Async) {
+            context->deleteLater();
+        } else {
+            delete context;
+        }
         context = nullptr;
         body = nullptr;
 
@@ -66,7 +70,7 @@ public:
     quint16 pktsize = 0;
 };
 
-class ProtocolFastCGI : public Protocol
+class ProtocolFastCGI final : public Protocol
 {
 public:
     ProtocolFastCGI(WSGI *wsgi);

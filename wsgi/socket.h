@@ -49,6 +49,7 @@ public:
 
     // Returns false if disconnected
     virtual bool requestFinished() = 0;
+    virtual bool flush() = 0;
 
     inline void resetSocket() {
         if (protoData->upgradedFrom) {
@@ -72,7 +73,7 @@ public:
     bool timeout = false;
 };
 
-class TcpSocket : public QTcpSocket, public Socket
+class TcpSocket final : public QTcpSocket, public Socket
 {
     Q_OBJECT
 public:
@@ -80,6 +81,7 @@ public:
 
     virtual void connectionClose() override final;
     virtual bool requestFinished() override final;
+    virtual bool flush() override final;
     void socketDisconnected();
 
 Q_SIGNALS:
@@ -91,7 +93,7 @@ Q_SIGNALS:
 
 #ifndef QT_NO_SSL
 
-class SslSocket : public QSslSocket, public Socket
+class SslSocket final : public QSslSocket, public Socket
 {
     Q_OBJECT
 public:
@@ -99,6 +101,7 @@ public:
 
     virtual void connectionClose() override final;
     virtual bool requestFinished() override final;
+    virtual bool flush() override final;
     void socketDisconnected();
 
 Q_SIGNALS:
@@ -108,7 +111,7 @@ Q_SIGNALS:
 
 #endif // QT_NO_SSL
 
-class LocalSocket : public QLocalSocket, public Socket
+class LocalSocket final : public QLocalSocket, public Socket
 {
     Q_OBJECT
 public:
@@ -116,6 +119,7 @@ public:
 
     virtual void connectionClose() override final;
     virtual bool requestFinished() override final;
+    virtual bool flush() override final;
     void socketDisconnected();
 
 Q_SIGNALS:

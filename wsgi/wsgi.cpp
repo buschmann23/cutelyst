@@ -60,6 +60,8 @@ using namespace Cutelyst;
 WSGI::WSGI(QObject *parent) : QObject(parent),
     d_ptr(new WSGIPrivate(this))
 {
+    QCoreApplication::addLibraryPath(QDir().absolutePath());
+
     if (qEnvironmentVariableIsEmpty("QT_MESSAGE_PATTERN")) {
         qSetMessagePattern(QLatin1String("%{pid}:%{threadid} %{category}[%{type}] %{message}"));
     }
@@ -131,6 +133,11 @@ void WSGI::parseCommandLine(const QStringList &arguments)
     QCommandLineOption master({ QStringLiteral("master"), QStringLiteral("M") },
                               QCoreApplication::translate("main", "Enable master process"));
     parser.addOption(master);
+
+    QCommandLineOption listenQueue({ QStringLiteral("listen"), QStringLiteral("l") },
+                                  QCoreApplication::translate("main", "set the socket listen queue size"),
+                                  QCoreApplication::translate("main", "size"));
+    parser.addOption(listenQueue);
 
     QCommandLineOption bufferSize({ QStringLiteral("buffer-size"), QStringLiteral("b") },
                                   QCoreApplication::translate("main", "set internal buffer size"),
@@ -382,6 +389,15 @@ void WSGI::parseCommandLine(const QStringList &arguments)
         setLazy(true);
     }
 
+    if (parser.isSet(listenQueue)) {
+        bool ok;
+        auto size = parser.value(listenQueue).toInt(&ok);
+        setListenQueue(size);
+        if (!ok || size < 1) {
+            parser.showHelp(1);
+        }
+    }
+
     if (parser.isSet(bufferSize)) {
         bool ok;
         auto size = parser.value(bufferSize).toInt(&ok);
@@ -548,8 +564,11 @@ int WSGI::exec(Cutelyst::Application *app)
     systemdNotify::install_systemd_notifier(this);
 #endif
 
-    // TCP needs root privileges
-    d->listenTcpSockets();
+    // TCP needs root privileges, but SO_REUSEPORT must have an effective user ID that
+    // matches the effective user ID used to perform the first bind on the socket.
+    if (!d->reusePort) {
+        d->listenTcpSockets();
+    }
 
     d->writePidFile(d->pidfile);
 
@@ -573,6 +592,10 @@ int WSGI::exec(Cutelyst::Application *app)
 #ifdef Q_OS_UNIX
     }
 #endif
+
+    if (d->reusePort) {
+        d->listenTcpSockets();
+    }
 
     if (!d->servers.size()) {
         std::cout << "Please specify a socket to listen to" << std::endl;
@@ -794,7 +817,15 @@ bool WSGIPrivate::listenLocal(const QString &line, Protocol *protocol)
 void WSGI::setApplication(const QString &application)
 {
     Q_D(WSGI);
-    d->application = application;
+
+    QPluginLoader loader(application);
+    if (loader.fileName().isEmpty()) {
+        d->application = application;
+    } else {
+        // We use the loader filename since it can provide
+        // the suffix for the file watcher
+        d->application = loader.fileName();
+    }
     Q_EMIT changed();
 }
 
@@ -1093,6 +1124,19 @@ QStringList WSGI::touchReload() const
 {
     Q_D(const WSGI);
     return d->touchReload;
+}
+
+void WSGI::setListenQueue(int size)
+{
+    Q_D(WSGI);
+    d->listenQueue = size;
+    Q_EMIT changed();
+}
+
+int WSGI::listenQueue() const
+{
+    Q_D(const WSGI);
+    return d->listenQueue;
 }
 
 void WSGI::setBufferSize(int size)
@@ -1567,11 +1611,11 @@ void WSGIPrivate::loadConfig(const QString &file, bool json)
     auto it = config.begin();
     while (it != config.end()) {
         auto itLoaded = loadedConfig.find(it.key());
-        while (itLoaded == loadedConfig.end()) {
+        while (itLoaded != loadedConfig.end()) {
             QVariantMap loadedMap = itLoaded.value().toMap();
             loadedMap.unite(it.value().toMap());
             it.value() = loadedMap;
-            loadedConfig.erase(itLoaded);
+            itLoaded = loadedConfig.erase(itLoaded);
         }
         ++it;
     }

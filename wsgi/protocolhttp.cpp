@@ -97,6 +97,7 @@ void ProtocolHttp::parse(Socket *sock, QIODevice *io) const
             remaining = protoRequest->contentLength - body->size();
             len = io->read(m_postBuffer, qMin(m_postBufferSize, remaining));
             if (len == -1) {
+                qCWarning(CWSGI_HTTP) << "error while reading body" << len << protoRequest->headers;
                 sock->connectionClose();
                 return;
             }
@@ -146,6 +147,7 @@ void ProtocolHttp::parse(Socket *sock, QIODevice *io) const
                         protoRequest->connState = ProtoRequestHttp::ContentBody;
                         protoRequest->body = createBody(protoRequest->contentLength);
                         if (!protoRequest->body) {
+                            qCWarning(CWSGI_HTTP) << "error while creating body, closing socket";
                             sock->connectionClose();
                             return;
                         }
@@ -432,6 +434,7 @@ void ProtoRequestHttp::processingFinished()
         return;
     }
 
+    sock->flush();
     if (last < buf_size) {
         if (status & EngineRequest::Async) {
             QTimer::singleShot(0, io, [=] {
@@ -457,8 +460,11 @@ bool ProtoRequestHttp::webSocketSendTextMessage(const QString &message)
 
     const QByteArray rawMessage = message.toUtf8();
     const QByteArray headers = ProtocolWebSocket::createWebsocketHeader(ProtoRequestHttp::OpCodeText, quint64(rawMessage.size()));
-    doWrite(headers);
-    return doWrite(rawMessage) == rawMessage.size();
+    if (doWrite(headers) == headers.size() && doWrite(rawMessage) == rawMessage.size()) {
+        sock->flush();
+        return true;
+    }
+    return false;
 }
 
 bool ProtoRequestHttp::webSocketSendBinaryMessage(const QByteArray &message)
@@ -468,8 +474,11 @@ bool ProtoRequestHttp::webSocketSendBinaryMessage(const QByteArray &message)
     }
 
     const QByteArray headers = ProtocolWebSocket::createWebsocketHeader(ProtoRequestHttp::OpCodeBinary, quint64(message.size()));
-    doWrite(headers);
-    return doWrite(message) == message.size();
+    if (doWrite(headers) == headers.size() && doWrite(message) == message.size()) {
+        sock->flush();
+        return true;
+    }
+    return false;
 }
 
 bool ProtoRequestHttp::webSocketSendPing(const QByteArray &payload)
@@ -480,8 +489,11 @@ bool ProtoRequestHttp::webSocketSendPing(const QByteArray &payload)
 
     const QByteArray rawMessage = payload.left(125);
     const QByteArray headers = ProtocolWebSocket::createWebsocketHeader(ProtoRequestHttp::OpCodePing, quint64(rawMessage.size()));
-    doWrite(headers);
-    return doWrite(rawMessage) == rawMessage.size();
+    if (doWrite(headers) == headers.size() && doWrite(rawMessage) == rawMessage.size()) {
+        sock->flush();
+        return true;
+    }
+    return false;
 }
 
 bool ProtoRequestHttp::webSocketClose(quint16 code, const QString &reason)
@@ -492,7 +504,9 @@ bool ProtoRequestHttp::webSocketClose(quint16 code, const QString &reason)
 
     const QByteArray reply = ProtocolWebSocket::createWebsocketCloseReply(reason, code);
     bool ret = doWrite(reply) == reply.size();
-    sock->requestFinished();
+    if (sock->requestFinished()) {
+        sock->flush();
+    }
     sock->connectionClose();
     return ret;
 }
@@ -548,7 +562,11 @@ bool ProtoRequestHttp::webSocketHandshakeDo(const QString &key, const QString &o
     auto httpProto = static_cast<ProtocolHttp *>(sock->proto);
     sock->proto = httpProto->m_websocketProto;
 
-    return writeHeaders(Cutelyst::Response::SwitchingProtocols, headers);
+    if (writeHeaders(Cutelyst::Response::SwitchingProtocols, headers)) {
+        sock->flush();
+        return true;
+    }
+    return false;
 }
 
 #include "moc_protocolhttp.cpp"
