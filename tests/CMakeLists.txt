@@ -68,3 +68,13 @@ cute_test(testlangselectmanual Cutelyst${PROJECT_VERSION_MAJOR}Qt${QT_VERSION_MA
 if (PLUGIN_CSRFPROTECTION)
     cute_test(testcsrfprotection Cutelyst${PROJECT_VERSION_MAJOR}Qt${QT_VERSION_MAJOR}::CSRFProtection "" "")
 endif(PLUGIN_CSRFPROTECTION)
+if (PLUGIN_FORMS)
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Qml REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} 5.15.2 REQUIRED COMPONENTS Qml)
+    cute_test(testforms Cutelyst${PROJECT_VERSION_MAJOR}Qt${QT_VERSION_MAJOR}::Forms Qt${QT_VERSION_MAJOR}::Qml "")
+    target_compile_definitions(testforms_exec
+        PRIVATE
+            FORMS_IMPORT_DIR="${CMAKE_BINARY_DIR}/Cutelyst/Plugins/Forms/imports"
+            TESTFORMS_DIR="${CMAKE_SOURCE_DIR}/tests/formstestdata"
+    )
+endif (PLUGIN_FORMS)

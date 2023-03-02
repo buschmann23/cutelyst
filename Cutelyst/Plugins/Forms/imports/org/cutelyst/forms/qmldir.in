@@ -1,0 +1,4 @@
+module @QMLPLUGIN_URI@
+plugin Cutelyst@PROJECT_VERSION_MAJOR@Qt@QT_VERSION_MAJOR@FormsQml
+classname QmlCutelystFormsPlugin
+typeinfo plugin.qmltypes

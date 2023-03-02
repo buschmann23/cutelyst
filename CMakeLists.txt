@@ -68,6 +68,7 @@ option(PLUGIN_VIEW_CUTELEE "Enables View::Cutelee plugin" ${BUILD_ALL})
 option(PLUGIN_VIEW_CLEARSILVER "Enables View::ClearSilver plugin" ${BUILD_ALL})
 option(PLUGIN_UWSGI "Enables uWSGI plugin" ${BUILD_ALL})
 option(PLUGIN_VALIDATOR_PWQUALITY "Enables ValidatorPwQuality that requires libpwquality 1.2.2 or newer" ${BUILD_ALL})
+option(PLUGIN_FORMS "Enables the Forms plugin that requires QtQml" ${BUILD_ALL})
 
 # NONE
 
