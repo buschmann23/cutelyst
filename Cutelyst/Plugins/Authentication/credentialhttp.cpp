@@ -2,23 +2,23 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include "authenticationrealm.h"
 #include "credentialhttp_p.h"
 #include "credentialpassword.h"
-
-#include "authenticationrealm.h"
 
 #include <Cutelyst/Context>
 #include <Cutelyst/Response>
 
-#include <QUrl>
 #include <QLoggingCategory>
+#include <QUrl>
 
 using namespace Cutelyst;
 
 Q_LOGGING_CATEGORY(C_CREDENTIALHTTP, "cutelyst.plugin.credentialhttp", QtWarningMsg)
 
-CredentialHttp::CredentialHttp(QObject *parent) : AuthenticationCredential(parent)
-  , d_ptr(new CredentialHttpPrivate)
+CredentialHttp::CredentialHttp(QObject *parent)
+    : AuthenticationCredential(parent)
+    , d_ptr(new CredentialHttpPrivate)
 {
 }
 
@@ -105,7 +105,9 @@ void CredentialHttp::setRequireSsl(bool require)
     d->requireSsl = require;
 }
 
-AuthenticationUser CredentialHttp::authenticate(Cutelyst::Context *c, AuthenticationRealm *realm, const ParamsMultiMap &authinfo)
+AuthenticationUser CredentialHttp::authenticate(Cutelyst::Context *c,
+                                                AuthenticationRealm *realm,
+                                                const ParamsMultiMap &authinfo)
 {
     Q_D(CredentialHttp);
 
@@ -126,9 +128,10 @@ AuthenticationUser CredentialHttp::authenticate(Cutelyst::Context *c, Authentica
     return ret;
 }
 
-bool CredentialHttpPrivate::checkPassword(const AuthenticationUser &user, const ParamsMultiMap &authinfo)
+bool CredentialHttpPrivate::checkPassword(const AuthenticationUser &user,
+                                          const ParamsMultiMap &authinfo)
 {
-    QString password = authinfo.value(passwordField);
+    QString password             = authinfo.value(passwordField);
     const QString storedPassword = user.value(passwordField).toString();
 
     if (Q_LIKELY(passwordType == CredentialHttp::Hashed)) {
@@ -151,7 +154,9 @@ bool CredentialHttpPrivate::checkPassword(const AuthenticationUser &user, const 
     return false;
 }
 
-AuthenticationUser CredentialHttpPrivate::authenticateBasic(Context *c, AuthenticationRealm *realm, const ParamsMultiMap &authinfo)
+AuthenticationUser CredentialHttpPrivate::authenticateBasic(Context *c,
+                                                            AuthenticationRealm *realm,
+                                                            const ParamsMultiMap &authinfo)
 {
     Q_UNUSED(authinfo)
     AuthenticationUser user;
@@ -178,7 +183,9 @@ AuthenticationUser CredentialHttpPrivate::authenticateBasic(Context *c, Authenti
     return user;
 }
 
-AuthenticationUser CredentialHttpPrivate::authenticationFailed(Context *c, AuthenticationRealm *realm, const ParamsMultiMap &authinfo)
+AuthenticationUser CredentialHttpPrivate::authenticationFailed(Context *c,
+                                                               AuthenticationRealm *realm,
+                                                               const ParamsMultiMap &authinfo)
 {
     Q_UNUSED(authinfo);
     Response *res = c->response();
@@ -206,8 +213,8 @@ bool CredentialHttpPrivate::isAuthTypeBasic() const
 
 void CredentialHttpPrivate::createBasicAuthResponse(Context *c, AuthenticationRealm *realm)
 {
-    c->res()->headers().setWwwAuthenticate(joinAuthHeaderParts(QStringLiteral("Basic"),
-                                                               buildAuthHeaderCommon(realm)));
+    c->res()->headers().setWwwAuthenticate(
+        joinAuthHeaderParts(QStringLiteral("Basic"), buildAuthHeaderCommon(realm)));
 }
 
 QStringList CredentialHttpPrivate::buildAuthHeaderCommon(AuthenticationRealm *realm) const
@@ -222,7 +229,8 @@ QStringList CredentialHttpPrivate::buildAuthHeaderCommon(AuthenticationRealm *re
     return ret;
 }
 
-QString CredentialHttpPrivate::joinAuthHeaderParts(const QString &type, const QStringList &parts) const
+QString CredentialHttpPrivate::joinAuthHeaderParts(const QString &type,
+                                                   const QStringList &parts) const
 {
     QString ret = type;
     if (!parts.isEmpty()) {

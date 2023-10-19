@@ -2,48 +2,48 @@
  * SPDX-FileCopyrightText: (C) 2016-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "server_p.h"
-
+#include "cwsgiengine.h"
+#include "localserver.h"
 #include "protocol.h"
+#include "protocolfastcgi.h"
 #include "protocolhttp.h"
 #include "protocolhttp2.h"
-#include "protocolfastcgi.h"
-#include "cwsgiengine.h"
+#include "server_p.h"
 #include "socket.h"
 #include "tcpserverbalancer.h"
-#include "localserver.h"
 
 #ifdef Q_OS_UNIX
-#include "unixfork.h"
+#    include "unixfork.h"
 #else
-#include "windowsfork.h"
+#    include "windowsfork.h"
 #endif
 
 #ifdef Q_OS_LINUX
-#include "../EventLoopEPoll/eventdispatcher_epoll.h"
-#include "systemdnotify.h"
+#    include "../EventLoopEPoll/eventdispatcher_epoll.h"
+#    include "systemdnotify.h"
 #endif
 
-#include <QCoreApplication>
+#include <iostream>
+
 #include <QCommandLineParser>
-#include <QUrl>
-#include <QPluginLoader>
-#include <QThread>
+#include <QCoreApplication>
+#include <QDir>
 #include <QLoggingCategory>
+#include <QMetaProperty>
+#include <QPluginLoader>
 #include <QSettings>
 #include <QSocketNotifier>
-#include <QMetaProperty>
+#include <QThread>
 #include <QTimer>
-#include <QDir>
-
-#include <iostream>
+#include <QUrl>
 
 Q_LOGGING_CATEGORY(CUTELYST_SERVER, "cutelyst.server", QtWarningMsg)
 
 using namespace Cutelyst;
 
-Server::Server(QObject *parent) : QObject(parent),
-    d_ptr(new ServerPrivate(this))
+Server::Server(QObject *parent)
+    : QObject(parent)
+    , d_ptr(new ServerPrivate(this))
 {
     QCoreApplication::addLibraryPath(QDir().absolutePath());
 
@@ -91,7 +91,8 @@ void Server::parseCommandLine(const QStringList &arguments)
     Q_D(Server);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::translate("main", "Fast, developer-friendly server"));
+    parser.setApplicationDescription(
+        QCoreApplication::translate("main", "Fast, developer-friendly server"));
     parser.addHelpOption();
     parser.addVersionOption();
 
@@ -100,130 +101,161 @@ void Server::parseCommandLine(const QStringList &arguments)
                               QCoreApplication::translate("main", "file"));
     parser.addOption(iniOpt);
 
-    QCommandLineOption jsonOpt({ QStringLiteral("j"), QStringLiteral("json") },
-                           QCoreApplication::translate("main", "load config from JSON file"),
-                           QCoreApplication::translate("main", "file"));
+    QCommandLineOption jsonOpt({QStringLiteral("j"), QStringLiteral("json")},
+                               QCoreApplication::translate("main", "load config from JSON file"),
+                               QCoreApplication::translate("main", "file"));
     parser.addOption(jsonOpt);
 
-    QCommandLineOption chdir(QStringLiteral("chdir"),
-                             QCoreApplication::translate("main", "chdir to specified directory before apps loading"),
-                             QCoreApplication::translate("main", "directory"));
+    QCommandLineOption chdir(
+        QStringLiteral("chdir"),
+        QCoreApplication::translate("main", "chdir to specified directory before apps loading"),
+        QCoreApplication::translate("main", "directory"));
     parser.addOption(chdir);
 
-    QCommandLineOption chdir2(QStringLiteral("chdir2"),
-                              QCoreApplication::translate("main", "chdir to specified directory afterapps loading"),
-                              QCoreApplication::translate("main", "directory"));
+    QCommandLineOption chdir2(
+        QStringLiteral("chdir2"),
+        QCoreApplication::translate("main", "chdir to specified directory afterapps loading"),
+        QCoreApplication::translate("main", "directory"));
     parser.addOption(chdir2);
 
-    QCommandLineOption lazyOption(QStringLiteral("lazy"),
-                                  QCoreApplication::translate("main", "set lazy mode (load app in workers instead of master)"));
+    QCommandLineOption lazyOption(
+        QStringLiteral("lazy"),
+        QCoreApplication::translate("main",
+                                    "set lazy mode (load app in workers instead of master)"));
     parser.addOption(lazyOption);
 
-    QCommandLineOption application({ QStringLiteral("application"), QStringLiteral("a") },
+    QCommandLineOption application({QStringLiteral("application"), QStringLiteral("a")},
                                    QCoreApplication::translate("main", "Application to load"),
                                    QCoreApplication::translate("main", "file"));
     parser.addOption(application);
 
-    QCommandLineOption threads({ QStringLiteral("threads"), QStringLiteral("t") },
+    QCommandLineOption threads({QStringLiteral("threads"), QStringLiteral("t")},
                                QCoreApplication::translate("main", "Number of thread to use"),
                                QCoreApplication::translate("main", "threads"));
     parser.addOption(threads);
 
 #ifdef Q_OS_UNIX
-    QCommandLineOption processes({ QStringLiteral("processes"), QStringLiteral("p") },
-                                 QCoreApplication::translate("main", "spawn the specified number of processes"),
-                                 QCoreApplication::translate("main", "processes"));
+    QCommandLineOption processes(
+        {QStringLiteral("processes"), QStringLiteral("p")},
+        QCoreApplication::translate("main", "spawn the specified number of processes"),
+        QCoreApplication::translate("main", "processes"));
     parser.addOption(processes);
 #endif
 
-    QCommandLineOption master({ QStringLiteral("master"), QStringLiteral("M") },
+    QCommandLineOption master({QStringLiteral("master"), QStringLiteral("M")},
                               QCoreApplication::translate("main", "Enable master process"));
     parser.addOption(master);
 
-    QCommandLineOption listenQueue({ QStringLiteral("listen"), QStringLiteral("l") },
-                                  QCoreApplication::translate("main", "set the socket listen queue size"),
-                                  QCoreApplication::translate("main", "size"));
+    QCommandLineOption listenQueue(
+        {QStringLiteral("listen"), QStringLiteral("l")},
+        QCoreApplication::translate("main", "set the socket listen queue size"),
+        QCoreApplication::translate("main", "size"));
     parser.addOption(listenQueue);
 
-    QCommandLineOption bufferSize({ QStringLiteral("buffer-size"), QStringLiteral("b") },
+    QCommandLineOption bufferSize({QStringLiteral("buffer-size"), QStringLiteral("b")},
                                   QCoreApplication::translate("main", "set internal buffer size"),
                                   QCoreApplication::translate("main", "bytes"));
     parser.addOption(bufferSize);
 
-    QCommandLineOption postBuffering(QStringLiteral("post-buffering"),
-                                     QCoreApplication::translate("main", "set size after which will buffer to disk instead of memory"),
-                                     QCoreApplication::translate("main", "bytes"));
+    QCommandLineOption postBuffering(
+        QStringLiteral("post-buffering"),
+        QCoreApplication::translate("main",
+                                    "set size after which will buffer to disk instead of memory"),
+        QCoreApplication::translate("main", "bytes"));
     parser.addOption(postBuffering);
 
-    QCommandLineOption postBufferingBufsize(QStringLiteral("post-buffering-bufsize"),
-                                            QCoreApplication::translate("main", "set buffer size for read() in post buffering mode"),
-                                            QCoreApplication::translate("main", "bytes"));
+    QCommandLineOption postBufferingBufsize(
+        QStringLiteral("post-buffering-bufsize"),
+        QCoreApplication::translate("main", "set buffer size for read() in post buffering mode"),
+        QCoreApplication::translate("main", "bytes"));
     parser.addOption(postBufferingBufsize);
 
-    QCommandLineOption httpSocketOpt({ QStringLiteral("http-socket"), QStringLiteral("h1") },
-                                     QCoreApplication::translate("main", "bind to the specified TCP socket using HTTP protocol"),
-                                     QCoreApplication::translate("main", "address"));
+    QCommandLineOption httpSocketOpt(
+        {QStringLiteral("http-socket"), QStringLiteral("h1")},
+        QCoreApplication::translate("main", "bind to the specified TCP socket using HTTP protocol"),
+        QCoreApplication::translate("main", "address"));
     parser.addOption(httpSocketOpt);
 
-    QCommandLineOption http2SocketOpt({ QStringLiteral("http2-socket"), QStringLiteral("h2") },
-                                     QCoreApplication::translate("main", "bind to the specified TCP socket using HTTP/2 protocol"),
-                                     QCoreApplication::translate("main", "address"));
+    QCommandLineOption http2SocketOpt(
+        {QStringLiteral("http2-socket"), QStringLiteral("h2")},
+        QCoreApplication::translate("main",
+                                    "bind to the specified TCP socket using HTTP/2 protocol"),
+        QCoreApplication::translate("main", "address"));
     parser.addOption(http2SocketOpt);
 
-    QCommandLineOption http2HeaderTableSizeOpt(QStringLiteral("http2-header-table-size"),
-                                               QCoreApplication::translate("main", "Defined the HTTP/2 header table size"),
-                                               QCoreApplication::translate("main", "size"));
+    QCommandLineOption http2HeaderTableSizeOpt(
+        QStringLiteral("http2-header-table-size"),
+        QCoreApplication::translate("main", "Defined the HTTP/2 header table size"),
+        QCoreApplication::translate("main", "size"));
     parser.addOption(http2HeaderTableSizeOpt);
 
-    QCommandLineOption upgradeH2cOpt(QStringLiteral("upgrade-h2c"),
-                                               QCoreApplication::translate("main", "Upgrades HTTP/1 to H2c (HTTP/2 Clear Text)"));
+    QCommandLineOption upgradeH2cOpt(
+        QStringLiteral("upgrade-h2c"),
+        QCoreApplication::translate("main", "Upgrades HTTP/1 to H2c (HTTP/2 Clear Text)"));
     parser.addOption(upgradeH2cOpt);
 
-    QCommandLineOption httpsH2Opt(QStringLiteral("https-h2"),
-                                  QCoreApplication::translate("main", "Negotiate HTTP/2 on HTTPS socket"));
+    QCommandLineOption httpsH2Opt(
+        QStringLiteral("https-h2"),
+        QCoreApplication::translate("main", "Negotiate HTTP/2 on HTTPS socket"));
     parser.addOption(httpsH2Opt);
 
-    QCommandLineOption httpsSocketOpt({ QStringLiteral("https-socket"), QStringLiteral("hs1") },
-                                      QCoreApplication::translate("main", "bind to the specified TCP socket using HTTPS protocol"),
-                                      QCoreApplication::translate("main", "address"));
+    QCommandLineOption httpsSocketOpt(
+        {QStringLiteral("https-socket"), QStringLiteral("hs1")},
+        QCoreApplication::translate("main",
+                                    "bind to the specified TCP socket using HTTPS protocol"),
+        QCoreApplication::translate("main", "address"));
     parser.addOption(httpsSocketOpt);
 
-    QCommandLineOption fastcgiSocketOpt(QStringLiteral("fastcgi-socket"),
-                                        QCoreApplication::translate("main", "bind to the specified UNIX/TCP socket using FastCGI protocol"),
-                                        QCoreApplication::translate("main", "address"));
+    QCommandLineOption fastcgiSocketOpt(
+        QStringLiteral("fastcgi-socket"),
+        QCoreApplication::translate("main",
+                                    "bind to the specified UNIX/TCP socket using FastCGI protocol"),
+        QCoreApplication::translate("main", "address"));
     parser.addOption(fastcgiSocketOpt);
 
-    QCommandLineOption socketAccess(QStringLiteral("socket-access"),
-                                    QCoreApplication::translate("main", "set the LOCAL socket access, such as 'ugo' standing for User, Group, Other access"),
-                                    QCoreApplication::translate("main", "options"));
+    QCommandLineOption socketAccess(
+        QStringLiteral("socket-access"),
+        QCoreApplication::translate(
+            "main",
+            "set the LOCAL socket access, such as 'ugo' standing for User, Group, Other access"),
+        QCoreApplication::translate("main", "options"));
     parser.addOption(socketAccess);
 
-    QCommandLineOption socketTimeout({ QStringLiteral("socket-timeout"), QStringLiteral("z") },
-                                     QCoreApplication::translate("main", "set internal sockets timeout"),
-                                     QCoreApplication::translate("main", "seconds"));
+    QCommandLineOption socketTimeout(
+        {QStringLiteral("socket-timeout"), QStringLiteral("z")},
+        QCoreApplication::translate("main", "set internal sockets timeout"),
+        QCoreApplication::translate("main", "seconds"));
     parser.addOption(socketTimeout);
 
-    QCommandLineOption staticMapOpt(QStringLiteral("static-map"),
-                                    QCoreApplication::translate("main", "map mountpoint to static directory (or file)"),
-                                    QCoreApplication::translate("main", "mountpoint=path"));
+    QCommandLineOption staticMapOpt(
+        QStringLiteral("static-map"),
+        QCoreApplication::translate("main", "map mountpoint to static directory (or file)"),
+        QCoreApplication::translate("main", "mountpoint=path"));
     parser.addOption(staticMapOpt);
 
-    QCommandLineOption staticMap2Opt(QStringLiteral("static-map2"),
-                                     QCoreApplication::translate("main", "like static-map but completely appending the requested resource to the docroot"),
-                                     QCoreApplication::translate("main", "mountpoint=path"));
+    QCommandLineOption staticMap2Opt(
+        QStringLiteral("static-map2"),
+        QCoreApplication::translate(
+            "main",
+            "like static-map but completely appending the requested resource to the docroot"),
+        QCoreApplication::translate("main", "mountpoint=path"));
     parser.addOption(staticMap2Opt);
 
-    QCommandLineOption autoReload({ QStringLiteral("auto-restart"), QStringLiteral("r") },
-                                  QCoreApplication::translate("main", "auto restarts when the application file changes"));
+    QCommandLineOption autoReload(
+        {QStringLiteral("auto-restart"), QStringLiteral("r")},
+        QCoreApplication::translate("main", "auto restarts when the application file changes"));
     parser.addOption(autoReload);
 
-    QCommandLineOption touchReloadOpt(QStringLiteral("touch-reload"),
-                                      QCoreApplication::translate("main", "reload application if the specified file is modified/touched"),
-                                      QCoreApplication::translate("main", "file"));
+    QCommandLineOption touchReloadOpt(
+        QStringLiteral("touch-reload"),
+        QCoreApplication::translate("main",
+                                    "reload application if the specified file is modified/touched"),
+        QCoreApplication::translate("main", "file"));
     parser.addOption(touchReloadOpt);
 
-    QCommandLineOption tcpNoDelay(QStringLiteral("tcp-nodelay"),
-                                  QCoreApplication::translate("main", "enable TCP NODELAY on each request"));
+    QCommandLineOption tcpNoDelay(
+        QStringLiteral("tcp-nodelay"),
+        QCoreApplication::translate("main", "enable TCP NODELAY on each request"));
     parser.addOption(tcpNoDelay);
 
     QCommandLineOption soKeepAlive(QStringLiteral("so-keepalive"),
@@ -240,19 +272,24 @@ void Server::parseCommandLine(const QStringList &arguments)
                                     QCoreApplication::translate("main", "bytes"));
     parser.addOption(socketRcvbuf);
 
-    QCommandLineOption wsMaxSize(QStringLiteral("websocket-max-size"),
-                                 QCoreApplication::translate("main", "sets the socket receive buffer size in bytes at the OS level. This maps to the SO_RCVBUF socket option"),
-                                 QCoreApplication::translate("main", "Kbytes"));
+    QCommandLineOption wsMaxSize(
+        QStringLiteral("websocket-max-size"),
+        QCoreApplication::translate("main",
+                                    "sets the socket receive buffer size in bytes at the OS level. "
+                                    "This maps to the SO_RCVBUF socket option"),
+        QCoreApplication::translate("main", "Kbytes"));
     parser.addOption(wsMaxSize);
 
-    QCommandLineOption pidfileOpt(QStringLiteral("pidfile"),
-                                  QCoreApplication::translate("main", "create pidfile (before privileges drop)"),
-                                  QCoreApplication::translate("main", "file"));
+    QCommandLineOption pidfileOpt(
+        QStringLiteral("pidfile"),
+        QCoreApplication::translate("main", "create pidfile (before privileges drop)"),
+        QCoreApplication::translate("main", "file"));
     parser.addOption(pidfileOpt);
 
-    QCommandLineOption pidfile2Opt(QStringLiteral("pidfile2"),
-                                   QCoreApplication::translate("main", "create pidfile (after privileges drop)"),
-                                   QCoreApplication::translate("main", "file"));
+    QCommandLineOption pidfile2Opt(
+        QStringLiteral("pidfile2"),
+        QCoreApplication::translate("main", "create pidfile (after privileges drop)"),
+        QCoreApplication::translate("main", "file"));
     parser.addOption(pidfile2Opt);
 
 #ifdef Q_OS_UNIX
@@ -261,18 +298,21 @@ void Server::parseCommandLine(const QStringList &arguments)
                                   QCoreApplication::translate("main", "pidfile"));
     parser.addOption(stopOption);
 
-    QCommandLineOption uidOption(QStringLiteral("uid"),
-                                 QCoreApplication::translate("main", "setuid to the specified user/uid"),
-                                 QCoreApplication::translate("main", "user/uid"));
+    QCommandLineOption uidOption(
+        QStringLiteral("uid"),
+        QCoreApplication::translate("main", "setuid to the specified user/uid"),
+        QCoreApplication::translate("main", "user/uid"));
     parser.addOption(uidOption);
 
-    QCommandLineOption gidOption(QStringLiteral("gid"),
-                                 QCoreApplication::translate("main", "setgid to the specified group/gid"),
-                                 QCoreApplication::translate("main", "group/gid"));
+    QCommandLineOption gidOption(
+        QStringLiteral("gid"),
+        QCoreApplication::translate("main", "setgid to the specified group/gid"),
+        QCoreApplication::translate("main", "group/gid"));
     parser.addOption(gidOption);
 
-    QCommandLineOption noInitgroupsOption(QStringLiteral("no-initgroups"),
-                                          QCoreApplication::translate("main", "disable additional groups set via initgroups()"));
+    QCommandLineOption noInitgroupsOption(
+        QStringLiteral("no-initgroups"),
+        QCoreApplication::translate("main", "disable additional groups set via initgroups()"));
     parser.addOption(noInitgroupsOption);
 
     QCommandLineOption chownSocketOption(QStringLiteral("chown-socket"),
@@ -280,31 +320,37 @@ void Server::parseCommandLine(const QStringList &arguments)
                                          QCoreApplication::translate("main", "uid:gid"));
     parser.addOption(chownSocketOption);
 
-    QCommandLineOption umaskOption(QStringLiteral("umask"),
-                                   QCoreApplication::translate("main", "set file mode creation mask"),
-                                   QCoreApplication::translate("main", "mode"));
+    QCommandLineOption umaskOption(
+        QStringLiteral("umask"),
+        QCoreApplication::translate("main", "set file mode creation mask"),
+        QCoreApplication::translate("main", "mode"));
     parser.addOption(umaskOption);
 
-    QCommandLineOption cpuAffinityOption(QStringLiteral("cpu-affinity"),
-                                         QCoreApplication::translate("main", "set CPU affinity with the number of CPUs available for each worker core"),
-                                         QCoreApplication::translate("main", "core count"));
+    QCommandLineOption cpuAffinityOption(
+        QStringLiteral("cpu-affinity"),
+        QCoreApplication::translate(
+            "main", "set CPU affinity with the number of CPUs available for each worker core"),
+        QCoreApplication::translate("main", "core count"));
     parser.addOption(cpuAffinityOption);
 #endif // Q_OS_UNIX
 
 #ifdef Q_OS_LINUX
-    QCommandLineOption reusePortOption(QStringLiteral("reuse-port"),
-                                       QCoreApplication::translate("main", "enable SO_REUSEPORT flag on socket (Linux 3.9+)"));
+    QCommandLineOption reusePortOption(
+        QStringLiteral("reuse-port"),
+        QCoreApplication::translate("main", "enable SO_REUSEPORT flag on socket (Linux 3.9+)"));
     parser.addOption(reusePortOption);
 #endif
 
-    QCommandLineOption threadBalancerOpt(QStringLiteral("experimental-thread-balancer"),
-                                         QCoreApplication::translate("main", "balances new connections to threads using round-robin"));
+    QCommandLineOption threadBalancerOpt(
+        QStringLiteral("experimental-thread-balancer"),
+        QCoreApplication::translate("main",
+                                    "balances new connections to threads using round-robin"));
     parser.addOption(threadBalancerOpt);
 
-    QCommandLineOption frontendProxy(QStringLiteral("using-frontend-proxy"),
-                                     QCoreApplication::translate("main", "Enable frontend (reverse-)proxy support"));
+    QCommandLineOption frontendProxy(
+        QStringLiteral("using-frontend-proxy"),
+        QCoreApplication::translate("main", "Enable frontend (reverse-)proxy support"));
     parser.addOption(frontendProxy);
-
 
     // Process the actual command line arguments given by the user
     parser.process(arguments);
@@ -522,13 +568,15 @@ int Server::exec(Cutelyst::Application *app)
     std::cout << "Cutelyst-Server starting" << std::endl;
 
     if (!qEnvironmentVariableIsSet("CUTELYST_SERVER_IGNORE_MASTER") && !d->master) {
-        std::cout << "*** WARNING: you are running Cutelyst-Server without its master process manager ***" << std::endl;
+        std::cout
+            << "*** WARNING: you are running Cutelyst-Server without its master process manager ***"
+            << std::endl;
     }
 
 #ifdef Q_OS_UNIX
     if (d->processes == -1 && d->threads == -1) {
         d->processes = UnixFork::idealProcessCount();
-        d->threads = UnixFork::idealThreadCount() / d->processes;
+        d->threads   = UnixFork::idealThreadCount() / d->processes;
     } else if (d->processes == -1) {
         d->processes = UnixFork::idealThreadCount();
     } else if (d->threads == -1) {
@@ -549,8 +597,10 @@ int Server::exec(Cutelyst::Application *app)
     d->genericFork = new WindowsFork(this);
 #endif
 
-    connect(d->genericFork, &AbstractFork::forked, d, &ServerPrivate::postFork, Qt::DirectConnection);
-    connect(d->genericFork, &AbstractFork::shutdown, d, &ServerPrivate::shutdown, Qt::DirectConnection);
+    connect(
+        d->genericFork, &AbstractFork::forked, d, &ServerPrivate::postFork, Qt::DirectConnection);
+    connect(
+        d->genericFork, &AbstractFork::shutdown, d, &ServerPrivate::shutdown, Qt::DirectConnection);
 
     if (d->master && d->lazy) {
         if (d->autoReload && !d->application.isEmpty()) {
@@ -572,9 +622,7 @@ int Server::exec(Cutelyst::Application *app)
             sd->sendStatus(qApp->applicationName().toLatin1() + " is ready");
             sd->sendReady("1");
         });
-        connect(d, &ServerPrivate::postForked, sd, [sd] {
-            sd->setWatchdog(false);
-        });
+        connect(d, &ServerPrivate::postForked, sd, [sd] { sd->setWatchdog(false); });
         qInfo(CUTELYST_SERVER) << "systemd notify detected";
     }
 #endif
@@ -583,32 +631,31 @@ int Server::exec(Cutelyst::Application *app)
     // matches the effective user ID used to perform the first bind on the socket.
 
     if (!d->reusePort) {
-        if(!d->listenTcpSockets()) {
+        if (!d->listenTcpSockets()) {
             Q_EMIT errorOccured(tr("No specified sockets were able to be opened"));
-            return 1; //No sockets has been opened
+            return 1; // No sockets has been opened
         }
     }
 
-    if(!d->writePidFile(d->pidfile)) {
+    if (!d->writePidFile(d->pidfile)) {
         Q_EMIT errorOccured(QString::fromLatin1("Failed write pid file %1").arg(d->pidfile));
     }
 
 #ifdef Q_OS_UNIX
     bool isListeningLocalSockets = false;
     if (!d->chownSocket.isEmpty()) {
-        if(!d->listenLocalSockets()) {
+        if (!d->listenLocalSockets()) {
             Q_EMIT errorOccured(QStringLiteral("Error on opening local sockets"));
             return 1;
         }
         isListeningLocalSockets = true;
     }
 
-    if (!d->umask.isEmpty() &&
-            !UnixFork::setUmask(d->umask.toLatin1())) {
+    if (!d->umask.isEmpty() && !UnixFork::setUmask(d->umask.toLatin1())) {
         return 1;
     }
 
-    if(!UnixFork::setGidUid(d->gid, d->uid, d->noInitgroups)) {
+    if (!UnixFork::setGidUid(d->gid, d->uid, d->noInitgroups)) {
         Q_EMIT errorOccured(QStringLiteral("Error on setting GID or UID"));
         return 1;
     }
@@ -621,9 +668,9 @@ int Server::exec(Cutelyst::Application *app)
 #endif
 
     if (d->reusePort) {
-        if(!d->listenTcpSockets()) {
+        if (!d->listenTcpSockets()) {
             Q_EMIT errorOccured(tr("No specified sockets were able to be opened"));
-            return 1; //No sockets has been opened
+            return 1; // No sockets has been opened
         }
     }
 
@@ -638,7 +685,8 @@ int Server::exec(Cutelyst::Application *app)
     if (!d->chdir.isEmpty()) {
         std::cout << "Changing directory to: " << d->chdir.toLatin1().constData() << std::endl;
         if (!QDir::setCurrent(d->chdir)) {
-            Q_EMIT errorOccured(QString::fromLatin1("Failed to chdir to: '%s'").arg(QString::fromLatin1(d->chdir.toLatin1().constData())));
+            Q_EMIT errorOccured(QString::fromLatin1("Failed to chdir to: '%s'")
+                                    .arg(QString::fromLatin1(d->chdir.toLatin1().constData())));
             return 1;
         }
     }
@@ -646,7 +694,7 @@ int Server::exec(Cutelyst::Application *app)
     d->app = app;
 
     if (!d->lazy) {
-        if(!d->setupApplication()) {
+        if (!d->setupApplication()) {
             Q_EMIT errorOccured(QStringLiteral("Failed to setup Application"));
             return 1;
         }
@@ -671,9 +719,9 @@ bool Server::start(Application *app)
         return false;
     }
 
-    d->processes = 0;
-    d->master = false;
-    d->lazy = false;
+    d->processes     = 0;
+    d->master        = false;
+    d->lazy          = false;
     d->userEventLoop = true;
 #ifdef Q_OS_UNIX
     d->uid = QString();
@@ -696,7 +744,8 @@ void Server::stop()
     }
 }
 
-ServerPrivate::~ServerPrivate() {
+ServerPrivate::~ServerPrivate()
+{
     delete protoHTTP;
     delete protoHTTP2;
     delete protoFCGI;
@@ -704,7 +753,8 @@ ServerPrivate::~ServerPrivate() {
 
 bool ServerPrivate::listenTcpSockets()
 {
-    if (httpSockets.isEmpty() && httpsSockets.isEmpty() && http2Sockets.isEmpty() && fastcgiSockets.isEmpty()) {
+    if (httpSockets.isEmpty() && httpsSockets.isEmpty() && http2Sockets.isEmpty() &&
+        fastcgiSockets.isEmpty()) {
         // no sockets to listen to
         return false;
     }
@@ -752,11 +802,10 @@ bool ServerPrivate::listenTcp(const QString &line, Protocol *protocol, bool secu
 
         if (ret && server->socketDescriptor()) {
             auto qEnum = protocol->staticMetaObject.enumerator(0);
-            std::cout << qEnum.valueToKey(static_cast<int>(protocol->type()))
-                      << " socket " << QByteArray::number(static_cast<int>(servers.size())).constData()
-                      << " bound to TCP address " << qPrintable(server->serverName())
-                      << " fd " << QByteArray::number(server->socketDescriptor()).constData()
-                      << std::endl;
+            std::cout << qEnum.valueToKey(static_cast<int>(protocol->type())) << " socket "
+                      << QByteArray::number(static_cast<int>(servers.size())).constData()
+                      << " bound to TCP address " << qPrintable(server->serverName()) << " fd "
+                      << QByteArray::number(server->socketDescriptor()).constData() << std::endl;
             servers.push_back(server);
         }
     }
@@ -766,8 +815,8 @@ bool ServerPrivate::listenTcp(const QString &line, Protocol *protocol, bool secu
 
 bool ServerPrivate::listenLocalSockets()
 {
-    QStringList http = httpSockets;
-    QStringList http2 = http2Sockets;
+    QStringList http    = httpSockets;
+    QStringList http2   = http2Sockets;
     QStringList fastcgi = fastcgiSockets;
 
 #ifdef Q_OS_LINUX
@@ -777,39 +826,40 @@ bool ServerPrivate::listenLocalSockets()
     for (int fd : fds) {
         auto server = new LocalServer(q, this);
         if (server->listen(fd)) {
-            const QString name = server->serverName();
+            const QString name     = server->serverName();
             const QString fullName = server->fullServerName();
 
             Protocol *protocol;
             if (http.removeOne(fullName) || http.removeOne(name)) {
                 protocol = getHttpProto();
-            } else if (http2.removeOne(fullName)  || http2.removeOne(name)) {
+            } else if (http2.removeOne(fullName) || http2.removeOne(name)) {
                 protocol = getHttp2Proto();
-            } else if (fastcgi.removeOne(fullName)  || fastcgi.removeOne(name)) {
+            } else if (fastcgi.removeOne(fullName) || fastcgi.removeOne(name)) {
                 protocol = getFastCgiProto();
             } else {
-                std::cerr << "systemd activated socket does not match any configured socket" << std::endl;
+                std::cerr << "systemd activated socket does not match any configured socket"
+                          << std::endl;
                 return false;
             }
             server->setProtocol(protocol);
             server->pauseAccepting();
 
             auto qEnum = protocol->staticMetaObject.enumerator(0);
-            std::cout << qEnum.valueToKey(static_cast<int>(protocol->type()))
-                      << " socket " << QByteArray::number(static_cast<int>(servers.size())).constData()
-                      << " bound to LOCAL address " << qPrintable(fullName)
-                      << " fd " << QByteArray::number(server->socket()).constData()
-                      << std::endl;
+            std::cout << qEnum.valueToKey(static_cast<int>(protocol->type())) << " socket "
+                      << QByteArray::number(static_cast<int>(servers.size())).constData()
+                      << " bound to LOCAL address " << qPrintable(fullName) << " fd "
+                      << QByteArray::number(server->socket()).constData() << std::endl;
             servers.push_back(server);
         } else {
-            std::cerr << "Failed to listen on activated LOCAL FD: " << QByteArray::number(fd).constData()
-                      << " : " << qPrintable(server->errorString()) << std::endl;
+            std::cerr << "Failed to listen on activated LOCAL FD: "
+                      << QByteArray::number(fd).constData() << " : "
+                      << qPrintable(server->errorString()) << std::endl;
             return false;
         }
     }
 #endif
 
-    bool ret = false;
+    bool ret             = false;
     const auto httpConst = http;
     for (const auto &socket : httpConst) {
         ret |= listenLocal(socket, getHttpProto());
@@ -856,8 +906,8 @@ bool ServerPrivate::listenLocal(const QString &line, Protocol *protocol)
         server->pauseAccepting();
 
         if (!ret || !server->socket()) {
-            std::cerr << "Failed to listen on LOCAL: " << qPrintable(line)
-                      << " : " << qPrintable(server->errorString()) << std::endl;
+            std::cerr << "Failed to listen on LOCAL: " << qPrintable(line) << " : "
+                      << qPrintable(server->errorString()) << std::endl;
             return false;
         }
 
@@ -867,11 +917,10 @@ bool ServerPrivate::listenLocal(const QString &line, Protocol *protocol)
         }
 #endif
         auto qEnum = protocol->staticMetaObject.enumerator(0);
-        std::cout << qEnum.valueToKey(static_cast<int>(protocol->type()))
-                  << " socket " << QByteArray::number(static_cast<int>(servers.size())).constData()
-                  << " bound to LOCAL address " << qPrintable(line)
-                  << " fd " << QByteArray::number(server->socket()).constData()
-                  << std::endl;
+        std::cout << qEnum.valueToKey(static_cast<int>(protocol->type())) << " socket "
+                  << QByteArray::number(static_cast<int>(servers.size())).constData()
+                  << " bound to LOCAL address " << qPrintable(line) << " fd "
+                  << QByteArray::number(server->socket()).constData() << std::endl;
         servers.push_back(server);
     }
 
@@ -939,7 +988,6 @@ QString Server::processes() const
         return QStringLiteral("auto");
     }
     return QString::number(d->processes);
-
 }
 
 void Server::setChdir(const QString &chdir)
@@ -1437,6 +1485,8 @@ void Server::setReusePort(bool enable)
     Q_D(Server);
     d->reusePort = enable;
     Q_EMIT changed();
+#else
+    Q_UNUSED(enable);
 #endif
 }
 
@@ -1488,13 +1538,16 @@ bool ServerPrivate::setupApplication()
 
         QObject *instance = loader.instance();
         if (!instance) {
-            qCCritical(CUTELYST_SERVER) << "Could not get a QObject instance: %s\n" << loader.errorString();
+            qCCritical(CUTELYST_SERVER) << "Could not get a QObject instance: %s\n"
+                                        << loader.errorString();
             return false;
         }
 
         localApp = qobject_cast<Cutelyst::Application *>(instance);
         if (!localApp) {
-            qCCritical(CUTELYST_SERVER) << "Could not cast Cutelyst::Application from instance: %s\n" << loader.errorString();
+            qCCritical(CUTELYST_SERVER)
+                << "Could not cast Cutelyst::Application from instance: %s\n"
+                << loader.errorString();
             return false;
         }
 
@@ -1506,9 +1559,10 @@ bool ServerPrivate::setupApplication()
     }
 
     if (!chdir2.isEmpty()) {
-        std::cout << "Changing directory2 to: " << chdir2.toLatin1().constData()  << std::endl;
+        std::cout << "Changing directory2 to: " << chdir2.toLatin1().constData() << std::endl;
         if (!QDir::setCurrent(chdir2)) {
-            Q_EMIT q->errorOccured(QString::fromLatin1("Failed to chdir2 to: '%s'").arg(QString::fromLatin1(chdir2.toLatin1().constData())));
+            Q_EMIT q->errorOccured(QString::fromLatin1("Failed to chdir2 to: '%s'")
+                                       .arg(QString::fromLatin1(chdir2.toLatin1().constData())));
             return false;
         }
     }
@@ -1521,7 +1575,7 @@ bool ServerPrivate::setupApplication()
             }
         }
     } else {
-        engine = createEngine(localApp, 0);
+        engine            = createEngine(localApp, 0);
         workersNotRunning = 1;
     }
 
@@ -1556,9 +1610,7 @@ void ServerPrivate::checkEngineShutdown()
             Q_Q(Server);
             Q_EMIT q->stopped();
         } else {
-            QTimer::singleShot(0, this, [] {
-                qApp->exit(15);
-            });
+            QTimer::singleShot(std::chrono::seconds{0}, this, [] { qApp->exit(15); });
         }
     }
 }
@@ -1578,7 +1630,7 @@ bool ServerPrivate::postFork(int workerId)
     Q_Q(Server);
 
     if (lazy) {
-        if(!setupApplication()) {
+        if (!setupApplication()) {
             Q_EMIT q->errorOccured(QStringLiteral("Failed to setup Application"));
             return false;
         }
@@ -1603,7 +1655,7 @@ bool ServerPrivate::postFork(int workerId)
 
     Q_EMIT postForked(workerId);
 
-    QTimer::singleShot(1000, this, [=]() {
+    QTimer::singleShot(std::chrono::seconds{1}, this, [=]() {
         // THIS IS NEEDED when
         // --master --threads N --experimental-thread-balancer
         // for some reason sometimes the balancer doesn't get
@@ -1649,8 +1701,13 @@ CWsgiEngine *ServerPrivate::createEngine(Application *app, int workerCore)
     auto engine = new CWsgiEngine(app, workerCore, opt, q);
     connect(this, &ServerPrivate::shutdown, engine, &CWsgiEngine::shutdown, Qt::QueuedConnection);
     connect(this, &ServerPrivate::postForked, engine, &CWsgiEngine::postFork, Qt::QueuedConnection);
-    connect(engine, &CWsgiEngine::shutdownCompleted, this, &ServerPrivate::engineShutdown, Qt::QueuedConnection);
-    connect(engine, &CWsgiEngine::started, this, &ServerPrivate::workerStarted, Qt::QueuedConnection);
+    connect(engine,
+            &CWsgiEngine::shutdownCompleted,
+            this,
+            &ServerPrivate::engineShutdown,
+            Qt::QueuedConnection);
+    connect(
+        engine, &CWsgiEngine::started, this, &ServerPrivate::workerStarted, Qt::QueuedConnection);
 
     engine->setConfig(config);
     engine->setServers(servers);
@@ -1688,7 +1745,7 @@ void ServerPrivate::loadConfig(const QString &file, bool json)
 
     QString section = QStringLiteral("server");
     if (filename.contains(QLatin1Char(':'))) {
-        section = filename.section(QLatin1Char(':'), -1, 1);
+        section  = filename.section(QLatin1Char(':'), -1, 1);
         filename = filename.section(QLatin1Char(':'), 0, -2);
     }
 
@@ -1718,7 +1775,7 @@ void ServerPrivate::loadConfig(const QString &file, bool json)
             loadedMap.insert(it.value().toMap());
 
             it.value() = loadedMap;
-            itLoaded = loadedConfig.erase(itLoaded);
+            itLoaded   = loadedConfig.erase(itLoaded);
         }
         ++it;
     }
@@ -1743,7 +1800,7 @@ void ServerPrivate::applyConfig(const QVariantMap &config)
             continue;
         }
 
-        const QVariant value = it.value();
+        const QVariant value     = it.value();
         const QMetaProperty prop = q->metaObject()->property(ix);
         if (prop.userType() == value.userType()) {
             if (prop.userType() == QMetaType::QStringList) {
@@ -1754,7 +1811,7 @@ void ServerPrivate::applyConfig(const QVariantMap &config)
             }
         } else if (prop.userType() == QMetaType::QStringList) {
             const QStringList currentValues = prop.read(q).toStringList();
-            prop.write(q, currentValues + QStringList{ value.toString() });
+            prop.write(q, currentValues + QStringList{value.toString()});
         } else {
             prop.write(q, value);
         }

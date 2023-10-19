@@ -2,22 +2,20 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "response_p.h"
-
+#include "common.h"
 #include "context_p.h"
 #include "engine.h"
 #include "enginerequest.h"
-#include "common.h"
-
-#include <QtCore/QJsonDocument>
+#include "response_p.h"
 
 #include <QCryptographicHash>
 #include <QEventLoop>
+#include <QtCore/QJsonDocument>
 
 using namespace Cutelyst;
 
 Response::Response(const Headers &defaultHeaders, EngineRequest *engineRequest)
-  : d_ptr(new ResponsePrivate(defaultHeaders, engineRequest))
+    : d_ptr(new ResponsePrivate(defaultHeaders, engineRequest))
 {
     open(QIODevice::WriteOnly);
 }
@@ -49,7 +47,7 @@ qint64 Response::writeData(const char *data, qint64 len)
         }
         delete d->bodyIODevice;
         d->bodyIODevice = nullptr;
-        d->bodyData = QByteArray();
+        d->bodyData     = QByteArray();
 
         d->engineRequest->finalizeHeaders();
     }
@@ -78,7 +76,8 @@ void Response::setStatus(quint16 status) noexcept
 bool Response::hasBody() const noexcept
 {
     Q_D(const Response);
-    return !d->bodyData.isEmpty() || d->bodyIODevice || d->engineRequest->status & EngineRequest::IOWrite;
+    return !d->bodyData.isEmpty() || d->bodyIODevice ||
+           d->engineRequest->status & EngineRequest::IOWrite;
 }
 
 QByteArray &Response::body()
@@ -167,7 +166,8 @@ void Cutelyst::Response::setContentEncoding(const QString &encoding)
     Q_D(Response);
     Q_ASSERT_X(!(d->engineRequest->status & EngineRequest::FinalizedHeaders),
                "setContentEncoding",
-               "setting a header value after finalize_headers and the response callback has been called. Not what you want.");
+               "setting a header value after finalize_headers and the response callback has been "
+               "called. Not what you want.");
 
     d->headers.setContentEncoding(encoding);
 }
@@ -183,7 +183,8 @@ void Response::setContentLength(qint64 length)
     Q_D(Response);
     Q_ASSERT_X(!(d->engineRequest->status & EngineRequest::FinalizedHeaders),
                "setContentLength",
-               "setting a header value after finalize_headers and the response callback has been called. Not what you want.");
+               "setting a header value after finalize_headers and the response callback has been "
+               "called. Not what you want.");
 
     d->headers.setContentLength(length);
 }
@@ -278,7 +279,7 @@ void Response::redirect(const QUrl &url, quint16 status)
 {
     Q_D(Response);
     d->location = url;
-    d->status = status;
+    d->status   = status;
 
     if (url.isValid()) {
         const auto location = QString::fromLatin1(url.toEncoded(QUrl::FullyEncoded));
@@ -293,7 +294,8 @@ void Response::redirect(const QUrl &url, quint16 status)
     <title>Moved</title>
   </head>
   <body>
-     <p>This item has moved <a href=")V0G0N") + location + QLatin1String(R"V0G0N(">here</a>.</p>
+     <p>This item has moved <a href=")V0G0N") +
+                            location + QLatin1String(R"V0G0N(">here</a>.</p>
   </body>
 </html>
 )V0G0N");
@@ -312,7 +314,8 @@ void Response::redirect(const QString &url, quint16 status)
 void Response::redirectSafe(const QUrl &url, const QUrl &fallback)
 {
     Q_D(const Response);
-    if (url.matches(d->engineRequest->context->req()->uri(), QUrl::RemovePath | QUrl::RemoveQuery)) {
+    if (url.matches(d->engineRequest->context->req()->uri(),
+                    QUrl::RemovePath | QUrl::RemoveQuery)) {
         redirect(url);
     } else {
         redirect(fallback);
@@ -336,7 +339,8 @@ void Response::setHeader(const QString &field, const QString &value)
     Q_D(Response);
     Q_ASSERT_X(!(d->engineRequest->status & EngineRequest::FinalizedHeaders),
                "setHeader",
-               "setting a header value after finalize_headers and the response callback has been called. Not what you want.");
+               "setting a header value after finalize_headers and the response callback has been "
+               "called. Not what you want.");
 
     d->headers.setHeader(field, value);
 }
@@ -370,7 +374,9 @@ qint64 Response::size() const noexcept
     }
 }
 
-bool Response::webSocketHandshake(const QString &key, const QString &origin, const QString &protocol)
+bool Response::webSocketHandshake(const QString &key,
+                                  const QString &origin,
+                                  const QString &protocol)
 {
     Q_D(Response);
     return d->engineRequest->webSocketHandshake(key, origin, protocol);

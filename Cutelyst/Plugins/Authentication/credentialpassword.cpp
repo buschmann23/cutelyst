@@ -2,22 +2,22 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "credentialpassword_p.h"
 #include "authenticationrealm.h"
+#include "credentialpassword_p.h"
 
+#include <QFile>
 #include <QLoggingCategory>
 #include <QMessageAuthenticationCode>
 #include <QUuid>
-#include <QFile>
 
 using namespace Cutelyst;
 
 Q_LOGGING_CATEGORY(C_CREDENTIALPASSWORD, "cutelyst.plugin.credentialpassword", QtWarningMsg)
 
-CredentialPassword::CredentialPassword(QObject *parent) : AuthenticationCredential(parent)
-  , d_ptr(new CredentialPasswordPrivate)
+CredentialPassword::CredentialPassword(QObject *parent)
+    : AuthenticationCredential(parent)
+    , d_ptr(new CredentialPasswordPrivate)
 {
-
 }
 
 CredentialPassword::~CredentialPassword()
@@ -25,7 +25,9 @@ CredentialPassword::~CredentialPassword()
     delete d_ptr;
 }
 
-AuthenticationUser CredentialPassword::authenticate(Context *c, AuthenticationRealm *realm, const ParamsMultiMap &authinfo)
+AuthenticationUser CredentialPassword::authenticate(Context *c,
+                                                    AuthenticationRealm *realm,
+                                                    const ParamsMultiMap &authinfo)
 {
     AuthenticationUser user;
     Q_D(CredentialPassword);
@@ -37,7 +39,8 @@ AuthenticationUser CredentialPassword::authenticate(Context *c, AuthenticationRe
             qCDebug(C_CREDENTIALPASSWORD) << "Password didn't match";
         }
     } else {
-        qCDebug(C_CREDENTIALPASSWORD) << "Unable to locate a user matching user info provided in realm";
+        qCDebug(C_CREDENTIALPASSWORD)
+            << "Unable to locate a user matching user info provided in realm";
     }
     return user;
 }
@@ -94,7 +97,7 @@ void CredentialPassword::setPasswordPostSalt(const QString &passwordPostSalt)
 bool slowEquals(const QByteArray &a, const QByteArray &b)
 {
     int diff = a.size() ^ b.size();
-    for(int i = 0; i < a.size() && i < b.size(); i++) {
+    for (int i = 0; i < a.size() && i < b.size(); i++) {
         diff |= a[i] ^ b[i];
     }
     return diff == 0;
@@ -118,19 +121,19 @@ bool CredentialPassword::validatePassword(const QByteArray &password, const QByt
     }
 
     QByteArray pbkdf2Hash = QByteArray::fromBase64(params.at(HASH_PBKDF2_INDEX));
-    return slowEquals(
-                pbkdf2Hash,
-                pbkdf2(
-                    static_cast<QCryptographicHash::Algorithm>(method),
-                    password,
-                    params.at(HASH_SALT_INDEX),
-                    params.at(HASH_ITERATION_INDEX).toInt(),
-                    pbkdf2Hash.length()
-                    )
-                );
+    return slowEquals(pbkdf2Hash,
+                      pbkdf2(static_cast<QCryptographicHash::Algorithm>(method),
+                             password,
+                             params.at(HASH_SALT_INDEX),
+                             params.at(HASH_ITERATION_INDEX).toInt(),
+                             pbkdf2Hash.length()));
 }
 
-QByteArray CredentialPassword::createPassword(const QByteArray &password, QCryptographicHash::Algorithm method, int iterations, int saltByteSize, int hashByteSize)
+QByteArray CredentialPassword::createPassword(const QByteArray &password,
+                                              QCryptographicHash::Algorithm method,
+                                              int iterations,
+                                              int saltByteSize,
+                                              int hashByteSize)
 {
     QByteArray salt;
 #ifdef Q_OS_LINUX
@@ -146,13 +149,7 @@ QByteArray CredentialPassword::createPassword(const QByteArray &password, QCrypt
 
     const QByteArray methodStr = CredentialPasswordPrivate::cryptoEnumToStr(method);
     return methodStr + ':' + QByteArray::number(iterations) + ':' + salt + ':' +
-            pbkdf2(
-                method,
-                password,
-                salt,
-                iterations,
-                hashByteSize
-                ).toBase64();
+           pbkdf2(method, password, salt, iterations, hashByteSize).toBase64();
 }
 
 QByteArray CredentialPassword::createPassword(const QByteArray &password)
@@ -164,7 +161,11 @@ QByteArray CredentialPassword::createPassword(const QByteArray &password)
 // shows a different Algorithm that seems a bit simpler
 // this one does passes the RFC6070 tests
 // https://www.ietf.org/rfc/rfc6070.txt
-QByteArray CredentialPassword::pbkdf2(QCryptographicHash::Algorithm method, const QByteArray &password, const QByteArray &salt, int rounds, int keyLength)
+QByteArray CredentialPassword::pbkdf2(QCryptographicHash::Algorithm method,
+                                      const QByteArray &password,
+                                      const QByteArray &salt,
+                                      int rounds,
+                                      int keyLength)
 {
     QByteArray key;
 
@@ -178,7 +179,7 @@ QByteArray CredentialPassword::pbkdf2(QCryptographicHash::Algorithm method, cons
     }
     key.reserve(keyLength);
 
-    int saltSize = salt.size();
+    int saltSize     = salt.size();
     QByteArray asalt = salt;
     asalt.resize(saltSize + 4);
 
@@ -199,8 +200,8 @@ QByteArray CredentialPassword::pbkdf2(QCryptographicHash::Algorithm method, cons
         for (int i = 1; i < rounds; ++i) {
             code.reset();
             code.addData(d1);
-            d1 = code.result();
-            auto it = obuf.begin();
+            d1        = code.result();
+            auto it   = obuf.begin();
             auto d1It = d1.cbegin();
             while (d1It != d1.cend()) {
                 *it = *it ^ *d1It;
@@ -217,14 +218,17 @@ QByteArray CredentialPassword::pbkdf2(QCryptographicHash::Algorithm method, cons
     return key;
 }
 
-QByteArray CredentialPassword::hmac(QCryptographicHash::Algorithm method, const QByteArray &key, const QByteArray &message)
+QByteArray CredentialPassword::hmac(QCryptographicHash::Algorithm method,
+                                    const QByteArray &key,
+                                    const QByteArray &message)
 {
     return QMessageAuthenticationCode::hash(key, message, method);
 }
 
-bool CredentialPasswordPrivate::checkPassword(const AuthenticationUser &user, const ParamsMultiMap &authinfo)
+bool CredentialPasswordPrivate::checkPassword(const AuthenticationUser &user,
+                                              const ParamsMultiMap &authinfo)
 {
-    QString password = authinfo.value(passwordField);
+    QString password             = authinfo.value(passwordField);
     const QString storedPassword = user.value(passwordField).toString();
 
     if (Q_LIKELY(passwordType == CredentialPassword::Hashed)) {

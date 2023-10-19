@@ -24,12 +24,18 @@ public:
     /**
      * Reimplemented from SessionStore::getSessionData().
      */
-    virtual QVariant getSessionData(Context *c, const QString &sid, const QString &key, const QVariant &defaultValue) final;
+    virtual QVariant getSessionData(Context *c,
+                                    const QString &sid,
+                                    const QString &key,
+                                    const QVariant &defaultValue) final;
 
     /**
      * Reimplemented from SessionStore::storeSessionData().
      */
-    virtual bool storeSessionData(Context *c, const QString &sid, const QString &key, const QVariant &value) final;
+    virtual bool storeSessionData(Context *c,
+                                  const QString &sid,
+                                  const QString &key,
+                                  const QVariant &value) final;
 
     /**
      * Reimplemented from SessionStore::deleteSessionData().
@@ -42,6 +48,6 @@ public:
     virtual bool deleteExpiredSessions(Context *c, quint64 expires) final;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // SESSIONSTOREFILE_H

@@ -13,23 +13,27 @@ namespace Cutelyst {
 class ActionPrivate : public ComponentPrivate
 {
 public:
-    virtual ~ActionPrivate() override = default;
-
     QString ns;
     QMetaMethod method;
     QMultiMap<QString, QString> attributes;
     Controller *controller = nullptr;
-    QStringList emptyArgs = {
-        QString(), QString(), QString(),
-        QString(), QString(), QString(),
-        QString(), QString(), QString(),
+    QStringList emptyArgs  = {
+        QString(),
+        QString(),
+        QString(),
+        QString(),
+        QString(),
+        QString(),
+        QString(),
+        QString(),
+        QString(),
     };
-    qint8 numberOfArgs = -1;
+    qint8 numberOfArgs     = -1;
     qint8 numberOfCaptures = -1;
-    bool evaluateBool = false;
-    bool listSignature = false;
+    bool evaluateBool      = false;
+    bool listSignature     = false;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CUTELYST_ACTION_P_H

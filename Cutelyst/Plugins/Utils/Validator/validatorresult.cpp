@@ -4,22 +4,23 @@
  */
 
 #include "validatorresult_p.h"
-#include <QJsonValue>
+
 #include <QJsonArray>
+#include <QJsonValue>
 
 using namespace Cutelyst;
 
-ValidatorResult::ValidatorResult() :
-    d(new ValidatorResultPrivate)
+ValidatorResult::ValidatorResult()
+    : d(new ValidatorResultPrivate)
 {
 }
 
-ValidatorResult::ValidatorResult(const ValidatorResult &other) :
-    d(other.d)
+ValidatorResult::ValidatorResult(const ValidatorResult &other)
+    : d(other.d)
 {
 }
 
-ValidatorResult& ValidatorResult::operator =(const ValidatorResult &other)
+ValidatorResult &ValidatorResult::operator=(const ValidatorResult &other)
 {
     d = other.d;
     return *this;
@@ -57,6 +58,11 @@ QStringList ValidatorResult::errorStrings() const
 QHash<QString, QStringList> ValidatorResult::errors() const
 {
     return d->errors;
+}
+
+QStringList ValidatorResult::errors(const QString &field) const
+{
+    return d->errors.value(field);
 }
 
 bool ValidatorResult::hasErrors(const QString &field) const

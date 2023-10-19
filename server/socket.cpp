@@ -12,9 +12,10 @@ Q_LOGGING_CATEGORY(CWSGI_SOCK, "cwsgi.socket", QtWarningMsg)
 
 using namespace Cutelyst;
 
-Socket::Socket(bool secure, Cutelyst::Engine *_engine) : engine(_engine), isSecure(secure)
+Socket::Socket(bool secure, Cutelyst::Engine *_engine)
+    : engine(_engine)
+    , isSecure(secure)
 {
-
 }
 
 Socket::~Socket()
@@ -22,9 +23,15 @@ Socket::~Socket()
     delete protoData;
 }
 
-TcpSocket::TcpSocket(Cutelyst::Engine *engine, QObject *parent) : QTcpSocket(parent), Socket(false, engine)
+TcpSocket::TcpSocket(Cutelyst::Engine *engine, QObject *parent)
+    : QTcpSocket(parent)
+    , Socket(false, engine)
 {
-    connect(this, &QTcpSocket::disconnected, this, &TcpSocket::socketDisconnected, Qt::DirectConnection);
+    connect(this,
+            &QTcpSocket::disconnected,
+            this,
+            &TcpSocket::socketDisconnected,
+            Qt::DirectConnection);
 }
 
 void TcpSocket::connectionClose()
@@ -56,9 +63,15 @@ void TcpSocket::socketDisconnected()
     }
 }
 
-LocalSocket::LocalSocket(Cutelyst::Engine *engine, QObject *parent) : QLocalSocket(parent), Socket(false, engine)
+LocalSocket::LocalSocket(Cutelyst::Engine *engine, QObject *parent)
+    : QLocalSocket(parent)
+    , Socket(false, engine)
 {
-    connect(this, &QLocalSocket::disconnected, this, &LocalSocket::socketDisconnected, Qt::DirectConnection);
+    connect(this,
+            &QLocalSocket::disconnected,
+            this,
+            &LocalSocket::socketDisconnected,
+            Qt::DirectConnection);
 }
 
 void LocalSocket::connectionClose()
@@ -92,9 +105,15 @@ void LocalSocket::socketDisconnected()
 
 #ifndef QT_NO_SSL
 
-SslSocket::SslSocket(Cutelyst::Engine *engine, QObject *parent) : QSslSocket(parent), Socket(true, engine)
+SslSocket::SslSocket(Cutelyst::Engine *engine, QObject *parent)
+    : QSslSocket(parent)
+    , Socket(true, engine)
 {
-    connect(this, &QSslSocket::disconnected, this, &SslSocket::socketDisconnected, Qt::DirectConnection);
+    connect(this,
+            &QSslSocket::disconnected,
+            this,
+            &SslSocket::socketDisconnected,
+            Qt::DirectConnection);
 }
 
 void SslSocket::connectionClose()

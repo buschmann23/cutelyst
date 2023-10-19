@@ -7,22 +7,25 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#include <cutelee/taglibraryinterface.h>
+#    include <cutelee/taglibraryinterface.h>
 
-#if defined(cutelyst_cutelee_urifor_EXPORTS)
-#  define CUTELYST_CUTELEE_URIFOR_EXPORT Q_DECL_EXPORT
-#else
-#  define CUTELYST_CUTELEE_URIFOR_EXPORT Q_DECL_IMPORT
-#endif
+#    if defined(cutelyst_cutelee_urifor_EXPORTS)
+#        define CUTELYST_CUTELEE_URIFOR_EXPORT Q_DECL_EXPORT
+#    else
+#        define CUTELYST_CUTELEE_URIFOR_EXPORT Q_DECL_IMPORT
+#    endif
 
-class CutelystCutelee final : public QObject, public Cutelee::TagLibraryInterface
+class CutelystCutelee final
+    : public QObject
+    , public Cutelee::TagLibraryInterface
 {
     Q_OBJECT
     Q_INTERFACES(Cutelee::TagLibraryInterface)
 public:
     explicit CutelystCutelee(QObject *parent = nullptr);
 
-    virtual QHash<QString, Cutelee::AbstractNodeFactory *> nodeFactories(const QString &name = QString()) override;
+    virtual QHash<QString, Cutelee::AbstractNodeFactory *>
+        nodeFactories(const QString &name = QString()) override;
 
     virtual QHash<QString, Cutelee::Filter *> filters(const QString &name = QString()) override;
 };

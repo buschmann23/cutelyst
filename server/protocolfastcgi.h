@@ -5,16 +5,19 @@
 #ifndef PROTOCOLFASTCGI_H
 #define PROTOCOLFASTCGI_H
 
-#include <QObject>
-#include <Cutelyst/Context>
-
 #include "protocol.h"
 #include "socket.h"
+
+#include <Cutelyst/Context>
+
+#include <QObject>
 
 namespace Cutelyst {
 
 class Server;
-class ProtoRequestFastCGI final : public ProtocolData, public Cutelyst::EngineRequest
+class ProtoRequestFastCGI final
+    : public ProtocolData
+    , public Cutelyst::EngineRequest
 {
     Q_GADGET
 public:
@@ -27,13 +30,12 @@ public:
 
     qint64 doWrite(const char *data, qint64 len) override final;
 
-    inline qint64 doWrite(const QByteArray &data) {
-        return doWrite(data.constData(), data.size());
-    }
+    inline qint64 doWrite(const QByteArray &data) { return doWrite(data.constData(), data.size()); }
 
     void processingFinished() override final;
 
-    inline void resetData() override final {
+    inline void resetData() override final
+    {
         ProtocolData::resetData();
 
         // EngineRequest
@@ -42,18 +44,18 @@ public:
         // and it will encounter a null context pointer
         delete context;
         context = nullptr;
-        body = nullptr;
+        body    = nullptr;
 
         elapsed.invalidate();
         status = InitialState;
 
         stream_id = 0;
-        pktsize = 0;
+        pktsize   = 0;
     }
 
 public:
     quint16 stream_id = 0;
-    quint16 pktsize = 0;
+    quint16 pktsize   = 0;
 };
 
 class ProtocolFastCGI final : public Protocol
@@ -70,12 +72,16 @@ public:
     ProtocolData *createData(Socket *sock) const override final;
 
 private:
-    inline quint16 addHeader(ProtoRequestFastCGI *request, const char *key, quint16 keylen, const char *val, quint16 vallen) const;
+    inline quint16 addHeader(ProtoRequestFastCGI *request,
+                             const char *key,
+                             quint16 keylen,
+                             const char *val,
+                             quint16 vallen) const;
     inline int parseHeaders(ProtoRequestFastCGI *request, const char *buf, quint16 len) const;
     inline int processPacket(ProtoRequestFastCGI *request) const;
     inline bool writeBody(ProtoRequestFastCGI *request, char *buf, qint64 len) const;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // PROTOCOLFASTCGI_H

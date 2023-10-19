@@ -4,19 +4,17 @@
  */
 #include "useragent.h"
 
-#include <Cutelyst/Engine>
 #include <Cutelyst/Context>
+#include <Cutelyst/Engine>
 #include <Cutelyst/Request>
 #include <Cutelyst/Response>
 
+#include <QBuffer>
 #include <QHostAddress>
+#include <QHttpMultiPart>
+#include <QJsonDocument>
 #include <QLoggingCategory>
 #include <QNetworkAccessManager>
-
-#include <QBuffer>
-#include <QHttpMultiPart>
-
-#include <QJsonDocument>
 
 using namespace Cutelyst;
 
@@ -64,12 +62,15 @@ QNetworkReply *UA::deleteResource(const QNetworkRequest &request)
     return m_instance.deleteResource(request);
 }
 
-QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QIODevice *data)
+QNetworkReply *
+    UA::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QIODevice *data)
 {
     return m_instance.sendCustomRequest(request, verb, data);
 }
 
-QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, const QByteArray &data)
+QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request,
+                                     const QByteArray &verb,
+                                     const QByteArray &data)
 {
     return m_instance.sendCustomRequest(request, verb, data);
 }
@@ -84,7 +85,9 @@ QNetworkReply *UA::put(const QNetworkRequest &request, QHttpMultiPart *multiPart
     return m_instance.post(request, multiPart);
 }
 
-QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QHttpMultiPart *multiPart)
+QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request,
+                                     const QByteArray &verb,
+                                     QHttpMultiPart *multiPart)
 {
     return m_instance.sendCustomRequest(request, verb, multiPart);
 }
@@ -92,64 +95,81 @@ QNetworkReply *UA::sendCustomRequest(const QNetworkRequest &request, const QByte
 QNetworkReply *UA::postJson(const QNetworkRequest &request, const QJsonDocument &doc)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.post(jsonRequest, doc.toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::putJson(const QNetworkRequest &request, const QJsonDocument &doc)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.put(jsonRequest, doc.toJson(QJsonDocument::Compact));
 }
 
-QNetworkReply *UA::sendCustomRequestJson(const QNetworkRequest &request, const QByteArray &verb, const QJsonDocument &doc)
+QNetworkReply *UA::sendCustomRequestJson(const QNetworkRequest &request,
+                                         const QByteArray &verb,
+                                         const QJsonDocument &doc)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return UA::sendCustomRequest(jsonRequest, verb, doc.toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::postJsonObject(const QNetworkRequest &request, const QJsonObject &obj)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.post(jsonRequest, QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::putJsonObject(const QNetworkRequest &request, const QJsonObject &obj)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.put(jsonRequest, QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
-QNetworkReply *UA::sendCustomRequestJsonObject(const QNetworkRequest &request, const QByteArray &verb, const QJsonObject &obj)
+QNetworkReply *UA::sendCustomRequestJsonObject(const QNetworkRequest &request,
+                                               const QByteArray &verb,
+                                               const QJsonObject &obj)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
-    return UA::sendCustomRequest(jsonRequest, verb, QJsonDocument(obj).toJson(QJsonDocument::Compact));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
+    return UA::sendCustomRequest(
+        jsonRequest, verb, QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::postJsonArray(const QNetworkRequest &request, const QJsonArray &array)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.post(jsonRequest, QJsonDocument(array).toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::putJsonArray(const QNetworkRequest &request, const QJsonArray &array)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
     return m_instance.put(jsonRequest, QJsonDocument(array).toJson(QJsonDocument::Compact));
 }
 
-QNetworkReply *UA::sendCustomRequestJsonArray(const QNetworkRequest &request, const QByteArray &verb, const QJsonArray &array)
+QNetworkReply *UA::sendCustomRequestJsonArray(const QNetworkRequest &request,
+                                              const QByteArray &verb,
+                                              const QJsonArray &array)
 {
     QNetworkRequest jsonRequest(request);
-    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader, QByteArrayLiteral("application/json"));
-    return UA::sendCustomRequest(jsonRequest, verb, QJsonDocument(array).toJson(QJsonDocument::Compact));
+    jsonRequest.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArrayLiteral("application/json"));
+    return UA::sendCustomRequest(
+        jsonRequest, verb, QJsonDocument(array).toJson(QJsonDocument::Compact));
 }
 
 QNetworkReply *UA::forwardRequest(Request *request, const QUrl &destination)
@@ -162,10 +182,11 @@ QNetworkReply *UA::forwardRequest(Request *request, const QUrl &destination)
     QNetworkRequest proxyReq(dest);
 
     const Headers reqHeaders = request->headers();
-    const auto headersData = reqHeaders.data();
-    auto it = headersData.constBegin();
+    const auto headersData   = reqHeaders.data();
+    auto it                  = headersData.constBegin();
     while (it != headersData.constEnd()) {
-        proxyReq.setRawHeader(Cutelyst::Engine::camelCaseHeader(it.key()).toLatin1(), it.value().toLatin1());
+        proxyReq.setRawHeader(Cutelyst::Engine::camelCaseHeader(it.key()).toLatin1(),
+                              it.value().toLatin1());
         ++it;
     }
 
@@ -176,12 +197,14 @@ QNetworkReply *UA::forwardRequestResponse(Context *c, const QUrl &destination)
 {
     QNetworkReply *reply = forwardRequest(c->request(), destination);
     QObject::connect(reply, &QNetworkReply::finished, c, [=] {
-        Headers &responseHeaders = c->response()->headers();
+        Headers &responseHeaders                           = c->response()->headers();
         const QList<QNetworkReply::RawHeaderPair> &headers = reply->rawHeaderPairs();
         for (const QNetworkReply::RawHeaderPair &pair : headers) {
-            responseHeaders.setHeader(QString::fromLatin1(pair.first), QString::fromLatin1(pair.second));
+            responseHeaders.setHeader(QString::fromLatin1(pair.first),
+                                      QString::fromLatin1(pair.second));
         }
-        c->response()->setStatus(quint16(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toUInt()));
+        c->response()->setStatus(
+            quint16(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toUInt()));
         c->response()->setBody(reply);
     });
     return reply;
@@ -191,12 +214,14 @@ void UA::forwardAsync(Context *c, const QUrl &destination)
 {
     QNetworkReply *reply = forwardRequest(c->request(), destination);
     QObject::connect(reply, &QNetworkReply::finished, c, [=] {
-        Headers &responseHeaders = c->response()->headers();
+        Headers &responseHeaders                           = c->response()->headers();
         const QList<QNetworkReply::RawHeaderPair> &headers = reply->rawHeaderPairs();
         for (const QNetworkReply::RawHeaderPair &pair : headers) {
-            responseHeaders.setHeader(QString::fromLatin1(pair.first), QString::fromLatin1(pair.second));
+            responseHeaders.setHeader(QString::fromLatin1(pair.first),
+                                      QString::fromLatin1(pair.second));
         }
-        c->response()->setStatus(quint16(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toUInt()));
+        c->response()->setStatus(
+            quint16(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toUInt()));
         c->response()->setBody(reply);
         c->attachAsync();
     });

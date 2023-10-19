@@ -4,16 +4,20 @@
  */
 
 #include "validatordomain_p.h"
-#include <QUrl>
-#include <QStringList>
-#include <QEventLoop>
+
 #include <QDnsLookup>
+#include <QEventLoop>
+#include <QStringList>
 #include <QTimer>
+#include <QUrl>
 
 using namespace Cutelyst;
 
-ValidatorDomain::ValidatorDomain(const QString &field, bool checkDNS, const ValidatorMessages &messages, const QString &defValKey) :
-    ValidatorRule(* new ValidatorDomainPrivate(field, checkDNS, messages, defValKey))
+ValidatorDomain::ValidatorDomain(const QString &field,
+                                 bool checkDNS,
+                                 const ValidatorMessages &messages,
+                                 const QString &defValKey)
+    : ValidatorRule(*new ValidatorDomainPrivate(field, checkDNS, messages, defValKey))
 {
 }
 
@@ -21,13 +25,16 @@ ValidatorDomain::~ValidatorDomain()
 {
 }
 
-bool ValidatorDomain::validate(const QString &value, bool checkDNS, Cutelyst::ValidatorDomain::Diagnose *diagnose, QString *extractedValue)
+bool ValidatorDomain::validate(const QString &value,
+                               bool checkDNS,
+                               Cutelyst::ValidatorDomain::Diagnose *diagnose,
+                               QString *extractedValue)
 {
     bool valid = true;
 
     Diagnose diag = Valid;
 
-    QString _v = value;
+    QString _v      = value;
     bool hasRootDot = false;
     if (_v.endsWith(u'.')) {
         hasRootDot = true;
@@ -49,7 +56,7 @@ bool ValidatorDomain::validate(const QString &value, bool checkDNS, Cutelyst::Va
             for (const QChar &ch : tld) {
                 const ushort &uc = ch.unicode();
                 if (((uc > 47) && (uc < 58)) || (uc == 45)) {
-                    diag = InvalidTLD;
+                    diag  = InvalidTLD;
                     valid = false;
                     break;
                 }
@@ -70,43 +77,45 @@ bool ValidatorDomain::validate(const QString &value, bool checkDNS, Cutelyst::Va
                                         if (!part.isEmpty()) {
                                             // labels/parts can have a maximum length of 63 chars
                                             if (part.length() < 64) {
-                                                bool isTld = (i == (parts.size() -1));
+                                                bool isTld      = (i == (parts.size() - 1));
                                                 bool isPunyCode = part.startsWith(u"xn--");
                                                 for (int j = 0; j < part.size(); ++j) {
-                                                    const ushort &uc = part.at(j).unicode();
+                                                    const ushort &uc   = part.at(j).unicode();
                                                     const bool isDigit = ((uc > 47) && (uc < 58));
-                                                    const bool isDash = (uc == 45);
-                                                    // no part/label can start with a digit or a dash
+                                                    const bool isDash  = (uc == 45);
+                                                    // no part/label can start with a digit or a
+                                                    // dash
                                                     if ((j == 0) && (isDash || isDigit)) {
                                                         valid = false;
-                                                        diag = isDash ? DashStart : DigitStart;
+                                                        diag  = isDash ? DashStart : DigitStart;
                                                         break;
                                                     }
                                                     // no part/label can end with a dash
                                                     if ((j == (part.size() - 1)) && isDash) {
                                                         valid = false;
-                                                        diag = DashEnd;
+                                                        diag  = DashEnd;
                                                         break;
                                                     }
                                                     const bool isChar = ((uc > 96) && (uc < 123));
                                                     if (!isTld) {
-                                                        // if it is not the tld, it can have a-z 0-9 and -
+                                                        // if it is not the tld, it can have a-z 0-9
+                                                        // and -
                                                         if (!(isDigit || isDash || isChar)) {
                                                             valid = false;
-                                                            diag = InvalidChars;
+                                                            diag  = InvalidChars;
                                                             break;
                                                         }
                                                     } else {
                                                         if (isPunyCode) {
                                                             if (!(isDigit || isDash || isChar)) {
                                                                 valid = false;
-                                                                diag = InvalidTLD;
+                                                                diag  = InvalidTLD;
                                                                 break;
                                                             }
                                                         } else {
                                                             if (!isChar) {
                                                                 valid = false;
-                                                                diag = InvalidTLD;
+                                                                diag  = InvalidTLD;
                                                                 break;
                                                             }
                                                         }
@@ -114,12 +123,12 @@ bool ValidatorDomain::validate(const QString &value, bool checkDNS, Cutelyst::Va
                                                 }
                                             } else {
                                                 valid = false;
-                                                diag = LabelTooLong;
+                                                diag  = LabelTooLong;
                                                 break;
                                             }
                                         } else {
                                             valid = false;
-                                            diag = EmptyLabel;
+                                            diag  = EmptyLabel;
                                             break;
                                         }
                                     } else {
@@ -128,57 +137,60 @@ bool ValidatorDomain::validate(const QString &value, bool checkDNS, Cutelyst::Va
                                 }
                             } else {
                                 valid = false;
-                                diag = InvalidTLD;
+                                diag  = InvalidTLD;
                             }
                         } else {
                             valid = false;
-                            diag = InvalidLabelCount;
+                            diag  = InvalidLabelCount;
                         }
                     } else {
                         valid = false;
-                        diag = TooLong;
+                        diag  = TooLong;
                     }
                 } else {
                     valid = false;
-                    diag = EmptyLabel;
+                    diag  = EmptyLabel;
                 }
             }
         } else {
             valid = false;
-            diag = EmptyLabel;
+            diag  = EmptyLabel;
         }
     } else {
         valid = false;
-        diag = EmptyLabel;
+        diag  = EmptyLabel;
     }
-
 
     if (valid && checkDNS) {
         QDnsLookup alookup(QDnsLookup::A, v);
         QEventLoop aloop;
         QObject::connect(&alookup, &QDnsLookup::finished, &aloop, &QEventLoop::quit);
-        QTimer::singleShot(3100, &alookup, &QDnsLookup::abort);
+        QTimer::singleShot(std::chrono::milliseconds{3100}, &alookup, &QDnsLookup::abort);
         alookup.lookup();
         aloop.exec();
 
-        if (((alookup.error() != QDnsLookup::NoError) && (alookup.error() != QDnsLookup::OperationCancelledError)) || alookup.hostAddressRecords().empty()) {
+        if (((alookup.error() != QDnsLookup::NoError) &&
+             (alookup.error() != QDnsLookup::OperationCancelledError)) ||
+            alookup.hostAddressRecords().empty()) {
             QDnsLookup aaaaLookup(QDnsLookup::AAAA, v);
             QEventLoop aaaaLoop;
             QObject::connect(&aaaaLookup, &QDnsLookup::finished, &aaaaLoop, &QEventLoop::quit);
-            QTimer::singleShot(3100, &aaaaLookup, &QDnsLookup::abort);
+            QTimer::singleShot(std::chrono::milliseconds{3100}, &aaaaLookup, &QDnsLookup::abort);
             aaaaLookup.lookup();
             aaaaLoop.exec();
 
-            if (((aaaaLookup.error() != QDnsLookup::NoError) && (aaaaLookup.error() != QDnsLookup::OperationCancelledError)) || aaaaLookup.hostAddressRecords().empty()) {
+            if (((aaaaLookup.error() != QDnsLookup::NoError) &&
+                 (aaaaLookup.error() != QDnsLookup::OperationCancelledError)) ||
+                aaaaLookup.hostAddressRecords().empty()) {
                 valid = false;
-                diag = MissingDNS;
+                diag  = MissingDNS;
             } else if (aaaaLookup.error() == QDnsLookup::OperationCancelledError) {
                 valid = false;
-                diag = DNSTimeout;
+                diag  = DNSTimeout;
             }
         } else if (alookup.error() == QDnsLookup::OperationCancelledError) {
             valid = false;
-            diag = DNSTimeout;
+            diag  = DNSTimeout;
         }
     }
 
@@ -204,40 +216,60 @@ QString ValidatorDomain::diagnoseString(Context *c, Diagnose diagnose, const QSt
     if (label.isEmpty()) {
         switch (diagnose) {
         case MissingDNS:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name seems to be valid but could not be found in the domain name system.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name seems to be valid but could not be found in the "
+                                 "domain name system.");
             break;
         case InvalidChars:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name contains characters that are not allowed.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name contains characters that are not allowed.");
             break;
         case LabelTooLong:
-            error = c->translate("Cutelyst::ValidatorDomain", "At least one of the sections separated by dots exceeds the maximum allowed length of 63 characters. Note that internationalized domain names can be longer internally than they are displayed.");
+            error =
+                c->translate("Cutelyst::ValidatorDomain",
+                             "At least one of the sections separated by dots exceeds the maximum "
+                             "allowed length of 63 characters. Note that internationalized domain "
+                             "names can be longer internally than they are displayed.");
             break;
         case TooLong:
-            error = c->translate("Cutelyst::ValidatorDomain", "The full name of the domain must not be longer than 253 characters. Note that internationalized domain names can be longer internally than they are displayed.");
+            error = c->translate(
+                "Cutelyst::ValidatorDomain",
+                "The full name of the domain must not be longer than 253 characters. Note that "
+                "internationalized domain names can be longer internally than they are displayed.");
             break;
         case InvalidLabelCount:
-            error = c->translate("Cutelyst::ValidatorDomain", "This is not a valid domain name because it has either no parts (is empty) or only has a top level domain.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "This is not a valid domain name because it has either no parts "
+                                 "(is empty) or only has a top level domain.");
             break;
         case EmptyLabel:
-            error = c->translate("Cutelyst::ValidatorDomain", "At least one of the sections separated by dots is empty. Check whether you have entered two dots consecutively.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "At least one of the sections separated by dots is empty. Check "
+                                 "whether you have entered two dots consecutively.");
             break;
         case InvalidTLD:
-            error = c->translate("Cutelyst::ValidatorDomain", "The top level domain (last part) contains characters that are not allowed, like digits and/or dashes.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The top level domain (last part) contains characters that are "
+                                 "not allowed, like digits and/or dashes.");
             break;
         case DashStart:
-            error = c->translate("Cutelyst::ValidatorDomain", "Domain name sections are not allowed to start with a dash.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "Domain name sections are not allowed to start with a dash.");
             break;
         case DashEnd:
-            error = c->translate("Cutelyst::ValidatorDomain", "Domain name sections are not allowed to end with a dash.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "Domain name sections are not allowed to end with a dash.");
             break;
         case DigitStart:
-            error = c->translate("Cutelyst::ValidatorDomain", "Domain name sections are not allowed to start with a digit.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "Domain name sections are not allowed to start with a digit.");
             break;
         case Valid:
             error = c->translate("Cutelyst::ValidatorDomain", "The domain name is valid.");
             break;
         case DNSTimeout:
-            error = c->translate("Cutelyst::ValidatorDomain", "The DNS lookup was aborted because it took too long.");
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The DNS lookup was aborted because it took too long.");
             break;
         default:
             Q_ASSERT_X(false, "domain validation diagnose", "invalid diagnose");
@@ -246,40 +278,81 @@ QString ValidatorDomain::diagnoseString(Context *c, Diagnose diagnose, const QSt
     } else {
         switch (diagnose) {
         case MissingDNS:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field seems to be valid but could not be found in the domain name system.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field seems to be valid but could "
+                                 "not be found in the domain name system.")
+                        .arg(label);
             break;
         case InvalidChars:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field contains characters that are not allowed.").arg(label);
+            error =
+                c->translate(
+                     "Cutelyst::ValidatorDomain",
+                     "The domain name in the “%1“ field contains characters that are not allowed.")
+                    .arg(label);
             break;
         case LabelTooLong:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field is not valid because at least one of the sections separated by dots exceeds the maximum allowed length of 63 characters. Note that internationalized domain names can be longer internally than they are displayed.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field is not valid because at least "
+                                 "one of the sections separated by dots exceeds the maximum "
+                                 "allowed length of 63 characters. Note that internationalized "
+                                 "domain names can be longer internally than they are displayed.")
+                        .arg(label);
             break;
         case TooLong:
-            error = c->translate("Cutelyst::ValidatorDomain", "The full name of the domain in the “%1” field must not be longer than 253 characters. Note that internationalized domain names can be longer internally than they are displayed.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The full name of the domain in the “%1” field must not be longer "
+                                 "than 253 characters. Note that internationalized domain names "
+                                 "can be longer internally than they are displayed.")
+                        .arg(label);
             break;
         case InvalidLabelCount:
-            error = c->translate("Cutelyst::ValidatorDomain", "The “%1” field does not contain a valid domain name because it has either no parts (is empty) or only has a top level domain.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The “%1” field does not contain a valid domain name because it "
+                                 "has either no parts (is empty) or only has a top level domain.")
+                        .arg(label);
             break;
         case EmptyLabel:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field is not valid because at least one of the sections separated by dots is empty. Check whether you have entered two dots consecutively.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field is not valid because at least "
+                                 "one of the sections separated by dots is empty. Check whether "
+                                 "you have entered two dots consecutively.")
+                        .arg(label);
             break;
         case InvalidTLD:
-            error = c->translate("Cutelyst::ValidatorDomain", "The top level domain (last part) of the domain name in the “%1” field contains characters that are not allowed, like digits and or dashes.").arg(label);
+            error = c->translate(
+                         "Cutelyst::ValidatorDomain",
+                         "The top level domain (last part) of the domain name in the “%1” field "
+                         "contains characters that are not allowed, like digits and or dashes.")
+                        .arg(label);
             break;
         case DashStart:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field is not valid because domain name sections are not allowed to start with a dash.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field is not valid because domain "
+                                 "name sections are not allowed to start with a dash.")
+                        .arg(label);
             break;
         case DashEnd:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field is not valid because domain name sections are not allowed to end with a dash.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field is not valid because domain "
+                                 "name sections are not allowed to end with a dash.")
+                        .arg(label);
             break;
         case DigitStart:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1“ field is not valid because domain name sections are not allowed to start with a digit.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1“ field is not valid because domain "
+                                 "name sections are not allowed to start with a digit.")
+                        .arg(label);
             break;
         case Valid:
-            error = c->translate("Cutelyst::ValidatorDomain", "The domain name in the “%1” field is valid.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The domain name in the “%1” field is valid.")
+                        .arg(label);
             break;
         case DNSTimeout:
-            error = c->translate("Cutelyst::ValidatorDomain", "The DNS lookup for the domain name in the “%1” field was aborted because it took too long.").arg(label);
+            error = c->translate("Cutelyst::ValidatorDomain",
+                                 "The DNS lookup for the domain name in the “%1” field was aborted "
+                                 "because it took too long.")
+                        .arg(label);
             break;
         default:
             Q_ASSERT_X(false, "domain validation diagnose", "invalid diagnose");
@@ -316,8 +389,8 @@ QString ValidatorDomain::genericValidationError(Context *c, const QVariant &erro
 {
     QString error;
     const QString _label = label(c);
-    const Diagnose diag = errorData.value<Diagnose>();
-    error = ValidatorDomain::diagnoseString(c, diag, _label);
+    const Diagnose diag  = errorData.value<Diagnose>();
+    error                = ValidatorDomain::diagnoseString(c, diag, _label);
     return error;
 }
 

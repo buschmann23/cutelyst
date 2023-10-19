@@ -5,10 +5,10 @@
 #ifndef DISPATCHTYPE_H
 #define DISPATCHTYPE_H
 
+#include <Cutelyst/cutelyst_global.h>
+
 #include <QtCore/qobject.h>
 #include <QtCore/qstringlist.h>
-
-#include <Cutelyst/cutelyst_global.h>
 
 namespace Cutelyst {
 
@@ -20,11 +20,7 @@ class CUTELYST_LIBRARY DispatchType : public QObject
     Q_OBJECT
 public:
     /** This enum is used to describe the kind of a match  */
-    enum MatchType {
-        NoMatch = 0,
-        PartialMatch,
-        ExactMatch
-    };
+    enum MatchType { NoMatch = 0, PartialMatch, ExactMatch };
     Q_ENUM(MatchType)
 
     /**
@@ -90,6 +86,6 @@ protected:
     void setupMatchedAction(Context *c, Action *action) const;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // DISPATCHTYPE_H

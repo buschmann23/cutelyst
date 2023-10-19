@@ -8,14 +8,13 @@
 
 using namespace Cutelyst;
 
-AuthenticationStore::AuthenticationStore(QObject *parent) : QObject(parent)
+AuthenticationStore::AuthenticationStore(QObject *parent)
+    : QObject(parent)
 {
-
 }
 
 AuthenticationStore::~AuthenticationStore()
 {
-
 }
 
 bool AuthenticationStore::canAutoCreateUser() const
@@ -23,7 +22,8 @@ bool AuthenticationStore::canAutoCreateUser() const
     return false;
 }
 
-AuthenticationUser AuthenticationStore::autoCreateUser(Context *c, const ParamsMultiMap &userinfo) const
+AuthenticationUser AuthenticationStore::autoCreateUser(Context *c,
+                                                       const ParamsMultiMap &userinfo) const
 {
     Q_UNUSED(c)
     Q_UNUSED(userinfo)
@@ -35,7 +35,8 @@ bool AuthenticationStore::canAutoUpdateUser() const
     return false;
 }
 
-AuthenticationUser AuthenticationStore::autoUpdateUser(Context *c, const ParamsMultiMap &userinfo) const
+AuthenticationUser AuthenticationStore::autoUpdateUser(Context *c,
+                                                       const ParamsMultiMap &userinfo) const
 {
     Q_UNUSED(c)
     Q_UNUSED(userinfo)

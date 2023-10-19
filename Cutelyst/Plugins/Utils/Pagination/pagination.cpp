@@ -13,17 +13,19 @@ Q_LOGGING_CATEGORY(C_PAGINATION, "cutelyst.utils.pagination", QtWarningMsg)
 Pagination::Pagination(int numberOfItems, int itemsPerPage, int currentPage, int pageLinks)
 {
     if (itemsPerPage <= 0) {
-        qCWarning(C_PAGINATION) << "Invalid number of items per page:" << itemsPerPage << "failing back to 1";
+        qCWarning(C_PAGINATION) << "Invalid number of items per page:" << itemsPerPage
+                                << "failing back to 1";
         itemsPerPage = 1;
     }
 
     if (currentPage <= 0) {
-        qCWarning(C_PAGINATION) << "Invalid current page:" << currentPage  << "failing back to 1";
+        qCWarning(C_PAGINATION) << "Invalid current page:" << currentPage << "failing back to 1";
         currentPage = 1;
     }
 
     if (pageLinks <= 0) {
-        qCWarning(C_PAGINATION) << "Invalid number of page links:" << pageLinks << "failing back to 1";
+        qCWarning(C_PAGINATION) << "Invalid number of page links:" << pageLinks
+                                << "failing back to 1";
         pageLinks = 1;
     }
 
@@ -38,7 +40,7 @@ Pagination::Pagination(int numberOfItems, int itemsPerPage, int currentPage, int
     }
 
     int startPage = (currentPage < pageLinks + 1) ? 1 : currentPage - pageLinks;
-    int endPage = (pageLinks * 2) + startPage;
+    int endPage   = (pageLinks * 2) + startPage;
     if (lastPage < endPage) {
         endPage = lastPage;
     }
@@ -56,7 +58,6 @@ Pagination::Pagination(int numberOfItems, int itemsPerPage, int currentPage, int
 
 Pagination::~Pagination()
 {
-
 }
 
 int Pagination::limit() const
@@ -72,11 +73,12 @@ int Pagination::offset() const
 int Pagination::offset(int itemsPerPage, int currentPage)
 {
     if (itemsPerPage <= 0) {
-        qCWarning(C_PAGINATION) << "Invalid number of items per page:" << itemsPerPage << "failing back to 1";
+        qCWarning(C_PAGINATION) << "Invalid number of items per page:" << itemsPerPage
+                                << "failing back to 1";
         itemsPerPage = 1;
     }
     if (currentPage <= 0) {
-        qCWarning(C_PAGINATION) << "Invalid current page:" << currentPage  << "failing back to 1";
+        qCWarning(C_PAGINATION) << "Invalid current page:" << currentPage << "failing back to 1";
         currentPage = 1;
     }
     return (currentPage - 1) * itemsPerPage;
@@ -109,7 +111,7 @@ bool Pagination::enableLast() const
 
 QVector<int> Pagination::pages() const
 {
-    return value(QStringLiteral("pages")).value<QVector<int> >();
+    return value(QStringLiteral("pages")).value<QVector<int>>();
 }
 
 #include "moc_pagination.cpp"

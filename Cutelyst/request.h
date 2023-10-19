@@ -5,12 +5,12 @@
 #ifndef CUTELYST_REQUEST_H
 #define CUTELYST_REQUEST_H
 
+#include <Cutelyst/cutelyst_global.h>
+#include <Cutelyst/headers.h>
+#include <Cutelyst/paramsmultimap.h>
+
 #include <QtCore/qobject.h>
 #include <QtCore/qstringlist.h>
-
-#include <Cutelyst/cutelyst_global.h>
-#include <Cutelyst/paramsmultimap.h>
-#include <Cutelyst/headers.h>
 
 class QIODevice;
 class QHostAddress;
@@ -215,7 +215,8 @@ public:
     QVariantMap bodyParametersVariant() const;
 
     /**
-     * Returns a Map of body (POST/PUT) parameters when content type is application/x-www-form-urlencoded
+     * Returns a Map of body (POST/PUT) parameters when content type is
+     * application/x-www-form-urlencoded
      */
     ParamsMultiMap bodyParameters() const;
 
@@ -270,7 +271,8 @@ public:
     ParamsMultiMap queryParameters() const;
 
     /**
-     * Convenience method for geting a single query value passing a key and an optional default value
+     * Convenience method for geting a single query value passing a key and an optional default
+     * value
      */
     inline QString queryParameter(const QString &key, const QString &defaultValue = {}) const;
 
@@ -287,7 +289,8 @@ public:
     inline ParamsMultiMap queryParams() const;
 
     /**
-     * Convenience method for geting a single query value passing a key and an optional default value
+     * Convenience method for geting a single query value passing a key and an optional default
+     * value
      */
     inline QString queryParam(const QString &key, const QString &defaultValue = {}) const;
 
@@ -477,7 +480,8 @@ Q_SIGNALS:
     void webSocketTextFrame(const QString &message, bool isLastFrame, Cutelyst::Context *c);
 
     /*!
-     * Emitted when the websocket receives a text message, this accounts for all text frames till the last one.
+     * Emitted when the websocket receives a text message, this accounts for all text frames till
+     * the last one.
      */
     void webSocketTextMessage(const QString &message, Cutelyst::Context *c);
 
@@ -488,7 +492,8 @@ Q_SIGNALS:
     void webSocketBinaryFrame(const QByteArray &message, bool isLastFrame, Cutelyst::Context *c);
 
     /*!
-     * Emitted when the websocket receives a binary message, this accounts for all binary frames till the last one.
+     * Emitted when the websocket receives a binary message, this accounts for all binary frames
+     * till the last one.
      */
     void webSocketBinaryMessage(const QByteArray &message, Cutelyst::Context *c);
 
@@ -519,50 +524,80 @@ private:
 };
 
 inline QStringList Request::args() const
-{ return arguments(); }
+{
+    return arguments();
+}
 
 inline QString Request::bodyParameter(const QString &key, const QString &defaultValue) const
-{ return bodyParameters().value(key, defaultValue); }
+{
+    return bodyParameters().value(key, defaultValue);
+}
 
 inline ParamsMultiMap Request::bodyParams() const
-{ return bodyParameters(); }
+{
+    return bodyParameters();
+}
 
 inline QString Request::bodyParam(const QString &key, const QString &defaultValue) const
-{ return bodyParameters().value(key, defaultValue); }
+{
+    return bodyParameters().value(key, defaultValue);
+}
 
 inline QStringList Request::bodyParams(const QString &key) const
-{ return bodyParameters(key); }
+{
+    return bodyParameters(key);
+}
 
 inline QString Request::queryParameter(const QString &key, const QString &defaultValue) const
-{ return queryParameters().value(key, defaultValue); }
+{
+    return queryParameters().value(key, defaultValue);
+}
 
 inline ParamsMultiMap Request::queryParams() const
-{ return queryParameters(); }
+{
+    return queryParameters();
+}
 
 inline QString Request::queryParam(const QString &key, const QString &defaultValue) const
-{ return queryParameters().value(key, defaultValue); }
+{
+    return queryParameters().value(key, defaultValue);
+}
 
 inline QStringList Request::queryParams(const QString &key) const
-{ return queryParameters(key); }
+{
+    return queryParameters(key);
+}
 
 inline QString Request::contentEncoding() const
-{ return headers().contentEncoding(); }
+{
+    return headers().contentEncoding();
+}
 
 inline QString Request::contentType() const
-{ return headers().contentType(); }
+{
+    return headers().contentType();
+}
 
 inline QString Request::header(const QString &key) const
-{ return headers().header(key); }
+{
+    return headers().header(key);
+}
 
 inline QString Request::userAgent() const
-{ return headers().userAgent(); }
+{
+    return headers().userAgent();
+}
 
 inline QString Request::referer() const
-{ return headers().referer(); }
+{
+    return headers().referer();
+}
 
 inline Upload *Request::upload(const QString &name) const
-{ return uploadsMap().value(name); }
-
+{
+    return uploadsMap().value(name);
 }
+
+} // namespace Cutelyst
 
 #endif // CUTELYST_REQUEST_H

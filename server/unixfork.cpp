@@ -7,39 +7,37 @@
 #include "server.h"
 
 #if defined(HAS_EventLoopEPoll)
-#include "EventLoopEPoll/eventdispatcher_epoll.h"
+#    include "EventLoopEPoll/eventdispatcher_epoll.h"
 #endif
 
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #if defined(__FreeBSD__) || defined(__GNU_kFreeBSD__)
-#include <sys/param.h>
-#include <sys/cpuset.h>
+#    include <sys/cpuset.h>
+#    include <sys/param.h>
 #endif
 
 #include <errno.h>
-#include <stdio.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <pwd.h>
 #include <grp.h>
-
-#include <sys/socket.h>
+#include <iostream>
+#include <pwd.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-#include <iostream>
-
-#include <QCoreApplication>
-#include <QSocketNotifier>
 #include <QAbstractEventDispatcher>
-#include <QTimer>
-#include <QMutex>
-#include <QThread>
+#include <QCoreApplication>
 #include <QFile>
 #include <QLoggingCategory>
+#include <QMutex>
+#include <QSocketNotifier>
+#include <QThread>
+#include <QTimer>
 
 Q_LOGGING_CATEGORY(WSGI_UNIX, "cutelyst.server.unix", QtWarningMsg)
 
@@ -48,9 +46,10 @@ Q_LOGGING_CATEGORY(WSGI_UNIX, "cutelyst.server.unix", QtWarningMsg)
 
 static int signalsFd[2];
 
-UnixFork::UnixFork(int process, int threads, bool setupSignals, QObject *parent) : AbstractFork(parent)
-  , m_threads(threads)
-  , m_processes(process)
+UnixFork::UnixFork(int process, int threads, bool setupSignals, QObject *parent)
+    : AbstractFork(parent)
+    , m_threads(threads)
+    , m_processes(process)
 {
     if (setupSignals) {
         setupUnixSignalHandlers();
@@ -73,7 +72,8 @@ bool UnixFork::continueMaster(int *exit)
 int UnixFork::exec(bool lazy, bool master)
 {
     if (master) {
-        std::cout << "spawned WSGI master process (pid: " << QCoreApplication::applicationPid() << ")" << std::endl;
+        std::cout << "spawned WSGI master process (pid: " << QCoreApplication::applicationPid()
+                  << ")" << std::endl;
     }
 
     int ret;
@@ -133,7 +133,7 @@ bool UnixFork::createProcess(bool respawn)
     if (respawn) {
         auto it = m_recreateWorker.begin();
         while (it != m_recreateWorker.end()) {
-            Worker worker = *it;
+            Worker worker  = *it;
             worker.restart = 0;
             if (!createChild(worker, respawn)) {
                 std::cout << "CHEAPING worker: " << worker.id << std::endl;
@@ -144,7 +144,7 @@ bool UnixFork::createProcess(bool respawn)
     } else {
         for (int i = 0; i < m_processes; ++i) {
             Worker worker;
-            worker.id = i + 1;
+            worker.id   = i + 1;
             worker.null = false;
             createChild(worker, respawn);
         }
@@ -156,7 +156,7 @@ bool UnixFork::createProcess(bool respawn)
 void UnixFork::decreaseWorkerRespawn()
 {
     int missingRespawn = 0;
-    auto it = m_childs.begin();
+    auto it            = m_childs.begin();
     while (it != m_childs.end()) {
         if (it.value().respawn > 0) {
             --it.value().respawn;
@@ -166,7 +166,7 @@ void UnixFork::decreaseWorkerRespawn()
     }
 
     if (missingRespawn) {
-        QTimer::singleShot(1 * 1000, this, &UnixFork::decreaseWorkerRespawn);
+        QTimer::singleShot(std::chrono::seconds{1}, this, &UnixFork::decreaseWorkerRespawn);
     }
 }
 
@@ -180,7 +180,7 @@ void UnixFork::killChild()
 
 void UnixFork::killChild(qint64 pid)
 {
-//    qCDebug(WSGI_UNIX) << "SIGKILL " << pid;
+    //    qCDebug(WSGI_UNIX) << "SIGKILL " << pid;
     ::kill(pid_t(pid), SIGKILL);
 }
 
@@ -194,7 +194,7 @@ void UnixFork::terminateChild()
 
 void UnixFork::terminateChild(qint64 pid)
 {
-//    qCDebug(WSGI_UNIX) << "SIGQUIT " << pid;
+    //    qCDebug(WSGI_UNIX) << "SIGQUIT " << pid;
     ::kill(pid_t(pid), SIGQUIT);
 }
 
@@ -202,12 +202,12 @@ void UnixFork::stopWSGI(const QString &pidfile)
 {
     QFile file(pidfile);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        std::cerr << "Failed open pid file " << qPrintable(pidfile)  << std::endl;
+        std::cerr << "Failed open pid file " << qPrintable(pidfile) << std::endl;
         exit(1);
     }
 
     QByteArray piddata = file.readLine().simplified();
-    qint64 pid = piddata.toLongLong();
+    qint64 pid         = piddata.toLongLong();
     if (pid < 2) {
         std::cerr << "Failed read pid file " << qPrintable(pidfile) << std::endl;
         exit(1);
@@ -225,13 +225,12 @@ bool UnixFork::setUmask(const QByteArray &valueStr)
     }
 
     const char *value = valueStr.constData();
-    mode_t mode = 0;
+    mode_t mode       = 0;
     if (valueStr.size() == 3) {
         mode = (mode << 3) + (value[0] - '0');
         mode = (mode << 3) + (value[1] - '0');
         mode = (mode << 3) + (value[2] - '0');
-    }
-    else {
+    } else {
         mode = (mode << 3) + (value[1] - '0');
         mode = (mode << 3) + (value[2] - '0');
         mode = (mode << 3) + (value[3] - '0');
@@ -245,7 +244,7 @@ bool UnixFork::setUmask(const QByteArray &valueStr)
 
 void UnixFork::signalHandler(int signal)
 {
-//    qDebug() << Q_FUNC_INFO << signal << QCoreApplication::applicationPid();
+    //    qDebug() << Q_FUNC_INFO << signal << QCoreApplication::applicationPid();
     char sig = signal;
     write(signalsFd[0], &sig, sizeof(sig));
 }
@@ -254,7 +253,7 @@ void UnixFork::setupCheckChildTimer()
 {
     if (!m_checkChildRestart) {
         m_checkChildRestart = new QTimer(this);
-        m_checkChildRestart->start(500);
+        m_checkChildRestart->start(std::chrono::milliseconds{500});
         connect(m_checkChildRestart, &QTimer::timeout, this, &UnixFork::handleSigChld);
     }
 }
@@ -284,7 +283,7 @@ bool UnixFork::setGidUid(const QString &gid, const QString &uid, bool noInitgrou
         }
 
         if (setgid(gidInt)) {
-            std::cerr << "Failed to set gid '%s'" <<  strerror(errno) << std::endl;
+            std::cerr << "Failed to set gid '%s'" << strerror(errno) << std::endl;
             return false;
         }
         std::cout << "setgid() to " << gidInt << std::endl;
@@ -296,7 +295,7 @@ bool UnixFork::setGidUid(const QString &gid, const QString &uid, bool noInitgrou
             }
         } else {
             char *uidname = nullptr;
-            uint uidInt = uid.toUInt(&ok);
+            uint uidInt   = uid.toUInt(&ok);
             if (ok) {
                 struct passwd *pw = getpwuid(uidInt);
                 if (pw) {
@@ -352,7 +351,7 @@ void UnixFork::chownSocket(const QString &filename, const QString &uidGid)
         new_uid = new_user->pw_uid;
     }
 
-    gid_t new_gid = -1u;
+    gid_t new_gid       = -1u;
     const QString group = uidGid.section(QLatin1Char(':'), 1, 1);
     if (!group.isEmpty()) {
         new_gid = group.toUInt(&ok);
@@ -371,27 +370,28 @@ void UnixFork::chownSocket(const QString &filename, const QString &uidGid)
 }
 
 #ifdef Q_OS_LINUX
-//static int cpuSockets = -1;
+// static int cpuSockets = -1;
 
 // socket/cores
-int parseProcCpuinfo() {
+int parseProcCpuinfo()
+{
     int cpuSockets = 1;
-//    std::pair<int, int> ret;
+    //    std::pair<int, int> ret;
 
-//    static QMutex mutex;
-//    QMutexLocker locker(&mutex);
+    //    static QMutex mutex;
+    //    QMutexLocker locker(&mutex);
     QFile file(QStringLiteral("/proc/cpuinfo"));
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         qCWarning(WSGI_UNIX) << "Failed to open file" << file.errorString();
-//        cpuSockets = 1;
-//        cpuCores = QThread::idealThreadCount();
+        //        cpuSockets = 1;
+        //        cpuCores = QThread::idealThreadCount();
         return cpuSockets;
     }
 
     char buf[1024];
     qint64 lineLength;
     QByteArrayList physicalIds;
-//    cpuCores = 0;
+    //    cpuCores = 0;
     while ((lineLength = file.readLine(buf, sizeof(buf))) != -1) {
         const QByteArray line(buf, int(lineLength));
         if (line.startsWith("physical id\t: ")) {
@@ -399,14 +399,14 @@ int parseProcCpuinfo() {
             if (!physicalIds.contains(id)) {
                 physicalIds.push_back(id);
             }
-        }/* else if (line.startsWith("processor \t: ")) {
-            ++cpuCores;
-        }*/
+        } /* else if (line.startsWith("processor \t: ")) {
+             ++cpuCores;
+         }*/
     }
 
-//    if (cpuCores == 0) {
-//        cpuCores = QThread::idealThreadCount();
-//    }
+    //    if (cpuCores == 0) {
+    //        cpuCores = QThread::idealThreadCount();
+    //    }
 
     if (physicalIds.size()) {
         cpuSockets = physicalIds.size();
@@ -442,22 +442,22 @@ int UnixFork::idealThreadCount()
 void UnixFork::handleSigHup()
 {
     // do Qt stuff
-//    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
-//    m_proc->kill();
+    //    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
+    //    m_proc->kill();
 }
 
 void UnixFork::handleSigTerm()
 {
     // do Qt stuff
-//    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
-//    qApp->quit();
-//    m_proc->terminate();
+    //    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
+    //    qApp->quit();
+    //    m_proc->terminate();
 }
 
 void UnixFork::handleSigInt()
 {
     // do Qt stuff
-//    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
+    //    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
     m_terminating = true;
     if (m_child || (m_childs.isEmpty())) {
         qDebug(WSGI_UNIX) << "SIGINT/SIGQUIT received, worker shutting down...";
@@ -470,14 +470,14 @@ void UnixFork::handleSigInt()
         if (count++ > 2) {
             std::cout << "KILL workers..." << std::endl;
             killChild();
-            QTimer::singleShot(3 * 1000, qApp, &QCoreApplication::quit);
+            QTimer::singleShot(std::chrono::seconds{3}, qApp, &QCoreApplication::quit);
         } else if (count > 1) {
             terminateChild();
         } else {
-            QTimer::singleShot(30 * 1000, this, [this]() {
+            QTimer::singleShot(std::chrono::seconds{30}, this, [this]() {
                 std::cout << "workers terminating timeout, KILL ..." << std::endl;
                 killChild();
-                QTimer::singleShot(3 * 1000, qApp, &QCoreApplication::quit);
+                QTimer::singleShot(std::chrono::seconds{30}, qApp, &QCoreApplication::quit);
             });
 
             terminateChild();
@@ -490,10 +490,9 @@ void UnixFork::handleSigChld()
     pid_t p;
     int status;
 
-    while ((p = waitpid(-1, &status, WNOHANG)) > 0)
-    {
+    while ((p = waitpid(-1, &status, WNOHANG)) > 0) {
         /* Handle the death of pid p */
-//        qCDebug(WSGI_UNIX) << "SIGCHLD worker died" << p << WEXITSTATUS(status);
+        //        qCDebug(WSGI_UNIX) << "SIGCHLD worker died" << p << WEXITSTATUS(status);
         // SIGTERM is used when CHEAPED (ie post fork failed)
         int exitStatus = WEXITSTATUS(status);
 
@@ -503,7 +502,8 @@ void UnixFork::handleSigChld()
             worker = it.value();
             m_childs.erase(it);
         } else {
-            std::cout << "DAMN ! *UNKNOWN* worker (pid: " << p << ") died, killed by signal " << exitStatus << " :( ignoring .." << std::endl;
+            std::cout << "DAMN ! *UNKNOWN* worker (pid: " << p << ") died, killed by signal "
+                      << exitStatus << " :( ignoring .." << std::endl;
             continue;
         }
 
@@ -514,11 +514,13 @@ void UnixFork::handleSigChld()
 
         if (!worker.null && !m_terminating) {
             if (worker.restart == 0) {
-                std::cout << "DAMN ! worker " << worker.id << " (pid: " << p << ") died, killed by signal " << exitStatus << " :( trying respawn .." << std::endl;
+                std::cout << "DAMN ! worker " << worker.id << " (pid: " << p
+                          << ") died, killed by signal " << exitStatus << " :( trying respawn .."
+                          << std::endl;
             }
             worker.restart = 0;
             ++worker.respawn;
-            QTimer::singleShot(1 * 1000, this, &UnixFork::decreaseWorkerRespawn);
+            QTimer::singleShot(std::chrono::seconds{1}, this, &UnixFork::decreaseWorkerRespawn);
             m_recreateWorker.push_back(worker);
             qApp->quit();
         } else if (!m_child && m_childs.isEmpty()) {
@@ -528,7 +530,7 @@ void UnixFork::handleSigChld()
 
     if (m_checkChildRestart) {
         bool allRestarted = true;
-        auto it = m_childs.begin();
+        auto it           = m_childs.begin();
         while (it != m_childs.end()) {
             if (it.value().restart) {
                 if (++it.value().restart > 10) {
@@ -552,7 +554,8 @@ void UnixFork::setSched(Cutelyst::Server *wsgi, int workerId, int workerCore)
     if (cpu_affinity) {
         char buf[4096];
 
-        int pos = snprintf(buf, 4096, "mapping worker %d core %d to CPUs:", workerId + 1, workerCore + 1);
+        int pos =
+            snprintf(buf, 4096, "mapping worker %d core %d to CPUs:", workerId + 1, workerCore + 1);
         if (pos < 25 || pos >= 4096) {
             qCCritical(WSGI_UNIX) << "unable to initialize cpu affinity !!!";
             exit(1);
@@ -614,26 +617,26 @@ int UnixFork::setupUnixSignalHandlers()
 {
     setupSocketPair(false, true);
 
-//    struct sigaction hup;
-//    hup.sa_handler = UnixFork::signalHandler;
-//    sigemptyset(&hup.sa_mask);
-//    hup.sa_flags = 0;
-//    hup.sa_flags |= SA_RESTART;
+    //    struct sigaction hup;
+    //    hup.sa_handler = UnixFork::signalHandler;
+    //    sigemptyset(&hup.sa_mask);
+    //    hup.sa_flags = 0;
+    //    hup.sa_flags |= SA_RESTART;
 
-//    if (sigaction(SIGHUP, &hup, 0) > 0)
-//        return 1;
+    //    if (sigaction(SIGHUP, &hup, 0) > 0)
+    //        return 1;
 
-//    struct sigaction term;
-//    term.sa_handler = UnixFork::signalHandler;
-//    sigemptyset(&term.sa_mask);
-//    term.sa_flags |= SA_RESTART;
+    //    struct sigaction term;
+    //    term.sa_handler = UnixFork::signalHandler;
+    //    sigemptyset(&term.sa_mask);
+    //    term.sa_flags |= SA_RESTART;
 
-//    if (sigaction(SIGTERM, &term, 0) > 0)
-//        return 2;
+    //    if (sigaction(SIGTERM, &term, 0) > 0)
+    //        return 2;
 
     struct sigaction action;
 
-//    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
+    //    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationPid();
 
     memset(&action, 0, sizeof(struct sigaction));
     action.sa_handler = UnixFork::signalHandler;
@@ -677,10 +680,11 @@ void UnixFork::setupSocketPair(bool closeSignalsFD, bool createPair)
         char signal;
         read(signalsFd[1], &signal, sizeof(signal));
 
-//        qCDebug(WSGI_UNIX) << "Got signal:" << static_cast<int>(signal) << "pid:" << QCoreApplication::applicationPid();
+        //        qCDebug(WSGI_UNIX) << "Got signal:" << static_cast<int>(signal) << "pid:" <<
+        //        QCoreApplication::applicationPid();
         switch (signal) {
         case SIGCHLD:
-            QTimer::singleShot(0, this, &UnixFork::handleSigChld);
+            QTimer::singleShot(std::chrono::seconds{0}, this, &UnixFork::handleSigChld);
             break;
         case SIGINT:
         case SIGQUIT:
@@ -706,12 +710,13 @@ bool UnixFork::createChild(const Worker &worker, bool respawn)
     if (childPID >= 0) {
         if (childPID == 0) {
             if (worker.respawn >= 5) {
-                std::cout << "WSGI worker " << worker.id << " respawned too much, sleeping a bit" << std::endl;
+                std::cout << "WSGI worker " << worker.id << " respawned too much, sleeping a bit"
+                          << std::endl;
                 sleep(2);
             }
 
 #if defined(HAS_EventLoopEPoll)
-            auto epoll = qobject_cast<EventDispatcherEPoll*>(QAbstractEventDispatcher::instance());
+            auto epoll = qobject_cast<EventDispatcherEPoll *>(QAbstractEventDispatcher::instance());
             if (epoll) {
                 epoll->reinstall();
             }
@@ -728,12 +733,15 @@ bool UnixFork::createChild(const Worker &worker, bool respawn)
             setupSocketPair(false, false);
 
             if (respawn) {
-                std::cout << "Respawned WSGI worker " << worker.id << " (new pid: " << childPID << ", cores: " << m_threads << ")" << std::endl;
+                std::cout << "Respawned WSGI worker " << worker.id << " (new pid: " << childPID
+                          << ", cores: " << m_threads << ")" << std::endl;
             } else {
                 if (m_processes == 1) {
-                    std::cout << "spawned WSGI worker (and the only) (pid: " << childPID << ", cores: " << m_threads << ")" << std::endl;
+                    std::cout << "spawned WSGI worker (and the only) (pid: " << childPID
+                              << ", cores: " << m_threads << ")" << std::endl;
                 } else {
-                    std::cout << "spawned WSGI worker " << worker.id << " (pid: " << childPID << ", cores: " << m_threads << ")" << std::endl;
+                    std::cout << "spawned WSGI worker " << worker.id << " (pid: " << childPID
+                              << ", cores: " << m_threads << ")" << std::endl;
                 }
             }
             m_childs.insert(childPID, worker);

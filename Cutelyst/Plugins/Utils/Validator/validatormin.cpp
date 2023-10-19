@@ -7,8 +7,12 @@
 
 using namespace Cutelyst;
 
-ValidatorMin::ValidatorMin(const QString &field, QMetaType::Type type, const QVariant &min, const Cutelyst::ValidatorMessages &messages, const QString &defValKey) :
-    ValidatorRule(*new ValidatorMinPrivate(field, type, min, messages, defValKey))
+ValidatorMin::ValidatorMin(const QString &field,
+                           QMetaType::Type type,
+                           const QVariant &min,
+                           const Cutelyst::ValidatorMessages &messages,
+                           const QString &defValKey)
+    : ValidatorRule(*new ValidatorMinPrivate(field, type, min, messages, defValKey))
 {
 }
 
@@ -25,7 +29,7 @@ ValidatorReturnType ValidatorMin::validate(Context *c, const ParamsMultiMap &par
     Q_D(const ValidatorMin);
 
     if (!v.isEmpty()) {
-        bool ok = false;
+        bool ok    = false;
         bool valid = false;
 
         switch (d->type) {
@@ -38,26 +42,41 @@ ValidatorReturnType ValidatorMin::validate(Context *c, const ParamsMultiMap &par
             const qlonglong val = c->locale().toLongLong(v, &ok);
             if (Q_UNLIKELY(!ok)) {
                 result.errorMessage = parsingError(c);
-                qCWarning(C_VALIDATOR, "ValidatorMin: Failed to parse value of field %s into number at %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                qCWarning(C_VALIDATOR,
+                          "ValidatorMin: Failed to parse value of field %s into number at %s::%s.",
+                          qPrintable(field()),
+                          qPrintable(c->controllerName()),
+                          qPrintable(c->actionName()));
             } else {
                 const qlonglong min = d->extractLongLong(c, params, d->min, &ok);
                 if (Q_UNLIKELY(!ok)) {
                     result.errorMessage = validationDataError(c, -1);
-                    qCWarning(C_VALIDATOR, "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                    qCWarning(
+                        C_VALIDATOR,
+                        "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.",
+                        qPrintable(field()),
+                        qPrintable(c->controllerName()),
+                        qPrintable(c->actionName()));
                 } else {
                     if (val < min) {
-                        result.errorMessage = validationError(c, QVariantMap{
-                                                                  {QStringLiteral("val"), val},
-                                                                  {QStringLiteral("min"), min}
-                                                              });
-                        qCDebug(C_VALIDATOR, "ValidatorMin: Validation failed for field %s in %s::%s: %lli is not greater than %lli.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()), val, min);
+                        result.errorMessage =
+                            validationError(c,
+                                            QVariantMap{{QStringLiteral("val"), val},
+                                                        {QStringLiteral("min"), min}});
+                        qCDebug(C_VALIDATOR,
+                                "ValidatorMin: Validation failed for field %s in %s::%s: %lli is "
+                                "not greater than %lli.",
+                                qPrintable(field()),
+                                qPrintable(c->controllerName()),
+                                qPrintable(c->actionName()),
+                                val,
+                                min);
                     } else {
                         valid = true;
                     }
                 }
             }
-        }
-            break;
+        } break;
         case QMetaType::UChar:
         case QMetaType::UShort:
         case QMetaType::UInt:
@@ -67,74 +86,118 @@ ValidatorReturnType ValidatorMin::validate(Context *c, const ParamsMultiMap &par
             const qulonglong val = v.toULongLong(&ok);
             if (Q_UNLIKELY(!ok)) {
                 result.errorMessage = parsingError(c);
-                qCWarning(C_VALIDATOR, "ValidatorMin: Failed to parse value of field %s into number at %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                qCWarning(C_VALIDATOR,
+                          "ValidatorMin: Failed to parse value of field %s into number at %s::%s.",
+                          qPrintable(field()),
+                          qPrintable(c->controllerName()),
+                          qPrintable(c->actionName()));
             } else {
                 const qulonglong min = d->extractULongLong(c, params, d->min, &ok);
                 if (Q_UNLIKELY(!ok)) {
                     result.errorMessage = validationDataError(c, -1);
-                    qCWarning(C_VALIDATOR, "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                    qCWarning(
+                        C_VALIDATOR,
+                        "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.",
+                        qPrintable(field()),
+                        qPrintable(c->controllerName()),
+                        qPrintable(c->actionName()));
                 } else {
                     if (val < min) {
-                        result.errorMessage = validationError(c, QVariantMap{
-                                                                  {QStringLiteral("val"), val},
-                                                                  {QStringLiteral("min"), min}
-                                                              });
-                        qCDebug(C_VALIDATOR, "ValidatorMin: Validation failed for field %s in %s::%s: %llu is not greater than %llu.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()), val, min);
+                        result.errorMessage =
+                            validationError(c,
+                                            QVariantMap{{QStringLiteral("val"), val},
+                                                        {QStringLiteral("min"), min}});
+                        qCDebug(C_VALIDATOR,
+                                "ValidatorMin: Validation failed for field %s in %s::%s: %llu is "
+                                "not greater than %llu.",
+                                qPrintable(field()),
+                                qPrintable(c->controllerName()),
+                                qPrintable(c->actionName()),
+                                val,
+                                min);
                     } else {
                         valid = true;
                     }
                 }
             }
-        }
-            break;
+        } break;
         case QMetaType::Float:
         case QMetaType::Double:
         {
             const double val = v.toDouble(&ok);
             if (Q_UNLIKELY(!ok)) {
                 result.errorMessage = parsingError(c);
-                qCWarning(C_VALIDATOR, "ValidatorMin: Failed to parse value of field %s into number at %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                qCWarning(C_VALIDATOR,
+                          "ValidatorMin: Failed to parse value of field %s into number at %s::%s.",
+                          qPrintable(field()),
+                          qPrintable(c->controllerName()),
+                          qPrintable(c->actionName()));
             } else {
                 const double min = d->extractDouble(c, params, d->min, &ok);
                 if (Q_UNLIKELY(!ok)) {
                     result.errorMessage = validationDataError(c, -1);
-                    qCWarning(C_VALIDATOR, "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                    qCWarning(
+                        C_VALIDATOR,
+                        "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.",
+                        qPrintable(field()),
+                        qPrintable(c->controllerName()),
+                        qPrintable(c->actionName()));
                 } else {
                     if (val < min) {
-                        result.errorMessage = validationError(c, QVariantMap{
-                                                                  {QStringLiteral("val"), val},
-                                                                  {QStringLiteral("min"), min}
-                                                              });
-                        qCDebug(C_VALIDATOR, "ValidatorMin: Validation failed for field %s in %s::%s: %f is not greater than %f.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()), val, min);
+                        result.errorMessage =
+                            validationError(c,
+                                            QVariantMap{{QStringLiteral("val"), val},
+                                                        {QStringLiteral("min"), min}});
+                        qCDebug(C_VALIDATOR,
+                                "ValidatorMin: Validation failed for field %s in %s::%s: %f is not "
+                                "greater than %f.",
+                                qPrintable(field()),
+                                qPrintable(c->controllerName()),
+                                qPrintable(c->actionName()),
+                                val,
+                                min);
                     } else {
                         valid = true;
                     }
                 }
             }
-        }
-            break;
+        } break;
         case QMetaType::QString:
         {
             const qlonglong val = static_cast<qlonglong>(v.length());
             const qlonglong min = d->extractLongLong(c, params, d->min, &ok);
             if (Q_UNLIKELY(!ok)) {
                 result.errorMessage = validationDataError(c, -1);
-                qCWarning(C_VALIDATOR, "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+                qCWarning(C_VALIDATOR,
+                          "ValidatorMin: Invalid minimum comparison value for field %s in %s::%s.",
+                          qPrintable(field()),
+                          qPrintable(c->controllerName()),
+                          qPrintable(c->actionName()));
             } else {
                 if (val < min) {
-                    result.errorMessage = validationError(c, QVariantMap{
-                                                              {QStringLiteral("val"), val},
-                                                              {QStringLiteral("min"), min}
-                                                          });
-                    qCDebug(C_VALIDATOR, "ValidatorMin: Validation failed for field %s in %s::%s: string length %lli is not longer than %lli.", qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()), val, min);
+                    result.errorMessage = validationError(
+                        c, QVariantMap{{QStringLiteral("val"), val}, {QStringLiteral("min"), min}});
+                    qCDebug(C_VALIDATOR,
+                            "ValidatorMin: Validation failed for field %s in %s::%s: string length "
+                            "%lli is not longer than %lli.",
+                            qPrintable(field()),
+                            qPrintable(c->controllerName()),
+                            qPrintable(c->actionName()),
+                            val,
+                            min);
                 } else {
                     valid = true;
                 }
             }
-        }
-            break;
+        } break;
         default:
-            qCWarning(C_VALIDATOR, "ValidatorMin: The comparison type with ID %i for field %s at %s::%s is not supported.", static_cast<int>(d->type), qPrintable(field()), qPrintable(c->controllerName()), qPrintable(c->actionName()));
+            qCWarning(C_VALIDATOR,
+                      "ValidatorMin: The comparison type with ID %i for field %s at %s::%s is not "
+                      "supported.",
+                      static_cast<int>(d->type),
+                      qPrintable(field()),
+                      qPrintable(c->controllerName()),
+                      qPrintable(c->actionName()));
             result.errorMessage = validationDataError(c, 0);
             break;
         }
@@ -195,15 +258,22 @@ QString ValidatorMin::genericValidationError(Cutelyst::Context *c, const QVarian
 
     if (_label.isEmpty()) {
         if (d->type == QMetaType::QString) {
-            error = c->translate("Cutelyst::ValidatorMin", "The text must be longer than %1 characters.").arg(min);
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The text must be longer than %1 characters.")
+                        .arg(min);
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "The value must be greater than %1.").arg(min);
+            error = c->translate("Cutelyst::ValidatorMin", "The value must be greater than %1.")
+                        .arg(min);
         }
     } else {
         if (d->type == QMetaType::QString) {
-            error = c->translate("Cutelyst::ValidatorMin", "The text in the “%1“ field must be longer than %2 characters.").arg(_label, min);
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The text in the “%1“ field must be longer than %2 characters.")
+                        .arg(_label, min);
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "The value in the “%1” field must be greater than %2.").arg(_label, min);
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The value in the “%1” field must be greater than %2.")
+                        .arg(_label, min);
         }
     }
 
@@ -214,21 +284,29 @@ QString ValidatorMin::genericValidationDataError(Context *c, const QVariant &err
 {
     QString error;
 
-    int field = errorData.toInt();
+    int field            = errorData.toInt();
     const QString _label = label(c);
 
     if (field == -1) {
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorMin", "The minimum comparison value is not valid.");
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The minimum comparison value is not valid.");
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "The minimum comparison value for the “%1” field is not valid.").arg(_label);
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The minimum comparison value for the “%1” field is not valid.")
+                        .arg(_label);
         }
     } else if (field == 0) {
         Q_D(const ValidatorMin);
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorMin", "The comparison type with ID %1 is not supported.").arg(static_cast<int>(d->type));
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "The comparison type with ID %1 is not supported.")
+                        .arg(static_cast<int>(d->type));
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "The comparison type with ID %1 for the “%2” field is not supported.").arg(QString::number(static_cast<int>(d->type)), _label);
+            error =
+                c->translate("Cutelyst::ValidatorMin",
+                             "The comparison type with ID %1 for the “%2” field is not supported.")
+                    .arg(QString::number(static_cast<int>(d->type)), _label);
         }
     }
 
@@ -244,15 +322,24 @@ QString ValidatorMin::genericParsingError(Context *c, const QVariant &errorData)
     const QString _label = label(c);
     if ((d->type == QMetaType::Float) || (d->type == QMetaType::Double)) {
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorMin", "Failed to parse the input value into a floating point number.");
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "Failed to parse the input value into a floating point number.");
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "Failed to parse the input value for the “%1” field into a floating point number.").arg(_label);
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "Failed to parse the input value for the “%1” field into a "
+                                 "floating point number.")
+                        .arg(_label);
         }
     } else {
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorMin", "Failed to parse the input value into an integer number.");
+            error = c->translate("Cutelyst::ValidatorMin",
+                                 "Failed to parse the input value into an integer number.");
         } else {
-            error = c->translate("Cutelyst::ValidatorMin", "Failed to parse the input value for the “%1” field into an integer number.").arg(_label);
+            error =
+                c->translate(
+                     "Cutelyst::ValidatorMin",
+                     "Failed to parse the input value for the “%1” field into an integer number.")
+                    .arg(_label);
         }
     }
 

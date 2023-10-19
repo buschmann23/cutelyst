@@ -5,29 +5,26 @@
 #ifndef VIEWJSON_P_H
 #define VIEWJSON_P_H
 
-#include "viewjson.h"
 #include "view_p.h"
+#include "viewjson.h"
 
 #include <QtCore/QJsonDocument>
-#include <QtCore/QStringList>
 #include <QtCore/QRegularExpression>
+#include <QtCore/QStringList>
 
 namespace Cutelyst {
 
 class ViewJsonPrivate : public ViewPrivate
 {
 public:
-    virtual ~ViewJsonPrivate() override = default;
-
     ViewJson::ExposeMode exposeMode = ViewJson::All;
     QString exposeKey;
     QStringList exposeKeys;
     QRegularExpression exposeRE;
     QJsonDocument::JsonFormat format = QJsonDocument::Compact;
-    bool xJsonHeader = false;
+    bool xJsonHeader                 = false;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // VIEWJSON_P_H
-

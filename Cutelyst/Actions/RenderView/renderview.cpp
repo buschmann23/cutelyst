@@ -2,13 +2,12 @@
  * SPDX-FileCopyrightText: (C) 2014-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include "application.h"
+#include "componentfactory.h"
+#include "context.h"
 #include "renderview_p.h"
-
 #include "response.h"
 #include "view.h"
-#include "application.h"
-#include "context.h"
-#include "componentfactory.h"
 
 #include <QtCore/QLoggingCategory>
 
@@ -21,16 +20,16 @@ using namespace Cutelyst;
  * \brief Sensible default end action.
  *
  * This action implements a sensible default end action, which will forward to the first available
- * view or a custom one, unless c->res()->status() is a 3xx code (redirection, not modified, etc.), 204 (no content), HEAD methods,
- * or c->res()->body() has already been set.
+ * view or a custom one, unless c->res()->status() is a 3xx code (redirection, not modified, etc.),
+ * 204 (no content), HEAD methods, or c->res()->body() has already been set.
  *
- * If you have more than one view, you can specify which one to use with the :View(view_name) attribute or one set with c->setView()
- * otherwise this module simply calls c->view() with no argument.
+ * If you have more than one view, you can specify which one to use with the :View(view_name)
+ * attribute or one set with c->setView() otherwise this module simply calls c->view() with no
+ * argument.
  *
  * The RenderView action allows to easily call a renderer without including it's
- * header and add implementation code, all that is needed is an anotation to the Controller's method:
- * \code{.h}
- * class Users : public Cutelyst::Controller
+ * header and add implementation code, all that is needed is an anotation to the Controller's
+ * method: \code{.h} class Users : public Cutelyst::Controller
  * {
  * public:
  *   C_ATTR(End, :ActionClass(RenderView))
@@ -48,7 +47,8 @@ using namespace Cutelyst;
  * ...
  * \endcode
  */
-RenderView::RenderView(QObject *parent) : Action(new RenderViewPrivate, parent)
+RenderView::RenderView(QObject *parent)
+    : Action(new RenderViewPrivate, parent)
 {
     setObjectName(QString::fromLatin1(metaObject()->className()) + QLatin1String("->execute"));
 }

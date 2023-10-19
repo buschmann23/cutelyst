@@ -4,17 +4,17 @@
  */
 #include "abstractfork.h"
 
+#include <iostream>
+
 #include <QFileSystemWatcher>
 #include <QLoggingCategory>
 #include <QTimer>
 
-#include <iostream>
-
 Q_LOGGING_CATEGORY(WSGI_FORK, "wsgi.fork", QtWarningMsg)
 
-AbstractFork::AbstractFork(QObject *parent) : QObject(parent)
+AbstractFork::AbstractFork(QObject *parent)
+    : QObject(parent)
 {
-
 }
 
 void AbstractFork::setTouchReload(const QStringList &paths)
@@ -26,8 +26,14 @@ void AbstractFork::installTouchReload()
 {
     if (!m_touchReloadPaths.isEmpty() && !m_touchReloadWatcher) {
         m_touchReloadWatcher = new QFileSystemWatcher(this);
-        connect(m_touchReloadWatcher, &QFileSystemWatcher::fileChanged, this, &AbstractFork::fileChanged);
-        connect(m_touchReloadWatcher, &QFileSystemWatcher::directoryChanged, this, &AbstractFork::directoryChanged);
+        connect(m_touchReloadWatcher,
+                &QFileSystemWatcher::fileChanged,
+                this,
+                &AbstractFork::fileChanged);
+        connect(m_touchReloadWatcher,
+                &QFileSystemWatcher::directoryChanged,
+                this,
+                &AbstractFork::directoryChanged);
         const QStringList ret = m_touchReloadWatcher->addPaths(m_touchReloadPaths);
         if (!ret.empty()) {
             std::cerr << "Failed setup file watcher" << std::endl;
@@ -37,7 +43,7 @@ void AbstractFork::installTouchReload()
 
         m_restartTimer = new QTimer(this);
         connect(m_restartTimer, &QTimer::timeout, this, &AbstractFork::restart);
-        m_restartTimer->setInterval(1 * 1000);
+        m_restartTimer->setInterval(std::chrono::seconds{1});
         m_restartTimer->setSingleShot(true);
     }
 }

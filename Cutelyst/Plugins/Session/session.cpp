@@ -3,18 +3,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "session_p.h"
-
 #include "sessionstorefile.h"
 
 #include <Cutelyst/Application>
 #include <Cutelyst/Context>
-#include <Cutelyst/Response>
 #include <Cutelyst/Engine>
+#include <Cutelyst/Response>
 
-#include <QUuid>
+#include <QCoreApplication>
 #include <QHostAddress>
 #include <QLoggingCategory>
-#include <QCoreApplication>
+#include <QUuid>
 
 using namespace Cutelyst;
 
@@ -32,10 +31,10 @@ Q_LOGGING_CATEGORY(C_SESSION, "cutelyst.plugin.session", QtWarningMsg)
 
 static thread_local Session *m_instance = nullptr;
 
-Session::Session(Cutelyst::Application *parent) : Plugin(parent)
-  , d_ptr(new SessionPrivate(this))
+Session::Session(Cutelyst::Application *parent)
+    : Plugin(parent)
+    , d_ptr(new SessionPrivate(this))
 {
-
 }
 
 Cutelyst::Session::~Session()
@@ -49,13 +48,14 @@ bool Session::setup(Application *app)
     d->sessionName = QCoreApplication::applicationName() + QLatin1String("_session");
 
     const QVariantMap config = app->engine()->config(QLatin1String("Cutelyst_Session_Plugin"));
-    d->sessionExpires = config.value(QLatin1String("expires"), 7200).toLongLong();
-    d->expiryThreshold = config.value(QLatin1String("expiry_threshold"), 0).toLongLong();
-    d->verifyAddress = config.value(QLatin1String("verify_address"), false).toBool();
-    d->verifyUserAgent = config.value(QLatin1String("verify_user_agent"), false).toBool();
-    d->cookieHttpOnly = config.value(QLatin1String("cookie_http_only"), true).toBool();
-    d->cookieSecure = config.value(QLatin1String("cookie_secure"), false).toBool();
-    const QString _sameSite = config.value(QLatin1String("cookie_same_site"), QStringLiteral("strict")).toString();
+    d->sessionExpires        = config.value(QLatin1String("expires"), 7200).toLongLong();
+    d->expiryThreshold       = config.value(QLatin1String("expiry_threshold"), 0).toLongLong();
+    d->verifyAddress         = config.value(QLatin1String("verify_address"), false).toBool();
+    d->verifyUserAgent       = config.value(QLatin1String("verify_user_agent"), false).toBool();
+    d->cookieHttpOnly        = config.value(QLatin1String("cookie_http_only"), true).toBool();
+    d->cookieSecure          = config.value(QLatin1String("cookie_secure"), false).toBool();
+    const QString _sameSite =
+        config.value(QLatin1String("cookie_same_site"), QStringLiteral("strict")).toString();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
     if (_sameSite.compare(u"default", Qt::CaseInsensitive) == 0) {
         d->cookieSameSite = QNetworkCookie::SameSite::Default;
@@ -79,9 +79,7 @@ bool Session::setup(Application *app)
 #endif
 
     connect(app, &Application::afterDispatch, this, &SessionPrivate::_q_saveSession);
-    connect(app, &Application::postForked, this, [=] {
-        m_instance = this;
-    });
+    connect(app, &Application::postForked, this, [=] { m_instance = this; });
 
     if (!d->store) {
         d->store = new SessionStoreFile(this);
@@ -144,7 +142,7 @@ quint64 Session::expires(Context *c)
 
 void Session::changeExpires(Context *c, quint64 expires)
 {
-    const QString sid = Session::id(c);
+    const QString sid    = Session::id(c);
     const qint64 timeExp = QDateTime::currentMSecsSinceEpoch() / 1000 + qint64(expires);
 
     if (Q_UNLIKELY(!m_instance)) {
@@ -171,7 +169,7 @@ QString Session::deleteReason(Context *c)
 
 QVariant Session::value(Cutelyst::Context *c, const QString &key, const QVariant &defaultValue)
 {
-    QVariant ret = defaultValue;
+    QVariant ret     = defaultValue;
     QVariant session = c->stash(SESSION_VALUES);
     if (session.isNull()) {
         session = SessionPrivate::loadSession(c);
@@ -195,7 +193,8 @@ void Session::setValue(Cutelyst::Context *c, const QString &key, const QVariant 
                 return;
             }
 
-            SessionPrivate::createSessionIdIfNeeded(m_instance, c, m_instance->d_ptr->sessionExpires);
+            SessionPrivate::createSessionIdIfNeeded(
+                m_instance, c, m_instance->d_ptr->sessionExpires);
             session = SessionPrivate::initializeSessionData(m_instance, c);
         }
     }
@@ -218,7 +217,8 @@ void Session::deleteValue(Context *c, const QString &key)
                 return;
             }
 
-            SessionPrivate::createSessionIdIfNeeded(m_instance, c, m_instance->d_ptr->sessionExpires);
+            SessionPrivate::createSessionIdIfNeeded(
+                m_instance, c, m_instance->d_ptr->sessionExpires);
             session = SessionPrivate::initializeSessionData(m_instance, c);
         }
     }
@@ -241,7 +241,8 @@ void Session::deleteValues(Context *c, const QStringList &keys)
                 return;
             }
 
-            SessionPrivate::createSessionIdIfNeeded(m_instance, c, m_instance->d_ptr->sessionExpires);
+            SessionPrivate::createSessionIdIfNeeded(
+                m_instance, c, m_instance->d_ptr->sessionExpires);
             session = SessionPrivate::initializeSessionData(m_instance, c);
         }
     }
@@ -354,12 +355,12 @@ void SessionPrivate::_q_saveSession(Context *c)
     if (!c->stash(SESSION_UPDATED).toBool()) {
         return;
     }
-    SessionStore *store = m_instance->d_ptr->store;
+    SessionStore *store      = m_instance->d_ptr->store;
     QVariantHash sessionData = c->stash(SESSION_VALUES).toHash();
     sessionData.insert(QStringLiteral("__updated"), QDateTime::currentMSecsSinceEpoch() / 1000);
 
     const QString sid = c->stash(SESSION_ID).toString();
-    store->storeSessionData(c, sid,  QStringLiteral("session"), sessionData);
+    store->storeSessionData(c, sid, QStringLiteral("session"), sessionData);
 }
 
 void SessionPrivate::deleteSession(Session *session, Context *c, const QString &reason)
@@ -391,7 +392,8 @@ void SessionPrivate::deleteSessionId(Session *session, Context *c, const QString
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
     updateSessionCookie(c, makeSessionCookie(session, c, sid, QDateTime::currentDateTimeUtc()));
 #else
-    updateSessionCuteCookie(c, makeSessionCuteCookie(session, c, sid, QDateTime::currentDateTimeUtc()));
+    updateSessionCuteCookie(
+        c, makeSessionCuteCookie(session, c, sid, QDateTime::currentDateTimeUtc()));
 #endif
 }
 
@@ -413,27 +415,29 @@ QVariant SessionPrivate::loadSession(Context *c)
     if (!loadSessionExpires(m_instance, c, sid).isNull()) {
         if (SessionPrivate::validateSessionId(sid)) {
 
-            const QVariantHash sessionData = m_instance->d_ptr->store->getSessionData(c, sid, QStringLiteral("session")).toHash();
+            const QVariantHash sessionData =
+                m_instance->d_ptr->store->getSessionData(c, sid, QStringLiteral("session"))
+                    .toHash();
             c->setStash(SESSION_VALUES, sessionData);
 
             if (m_instance->d_ptr->verifyAddress &&
-                    sessionData.contains(QStringLiteral("__address")) &&
-                    sessionData.value(QStringLiteral("__address")).toString() != c->request()->address().toString()) {
+                sessionData.contains(QStringLiteral("__address")) &&
+                sessionData.value(QStringLiteral("__address")).toString() !=
+                    c->request()->address().toString()) {
                 qCWarning(C_SESSION) << "Deleting session" << sid << "due to address mismatch:"
                                      << sessionData.value(QStringLiteral("__address")).toString()
-                                     << "!="
-                                     << c->request()->address().toString();
+                                     << "!=" << c->request()->address().toString();
                 deleteSession(m_instance, c, QStringLiteral("address mismatch"));
                 return ret;
             }
 
             if (m_instance->d_ptr->verifyUserAgent &&
-                    sessionData.contains(QStringLiteral("__user_agent")) &&
-                    sessionData.value(QStringLiteral("__user_agent")).toString() != c->request()->userAgent()) {
+                sessionData.contains(QStringLiteral("__user_agent")) &&
+                sessionData.value(QStringLiteral("__user_agent")).toString() !=
+                    c->request()->userAgent()) {
                 qCWarning(C_SESSION) << "Deleting session" << sid << "due to user agent mismatch:"
                                      << sessionData.value(QStringLiteral("__user_agent")).toString()
-                                     << "!="
-                                     << c->request()->userAgent();
+                                     << "!=" << c->request()->userAgent();
                 deleteSession(m_instance, c, QStringLiteral("user agent mismatch"));
                 return ret;
             }
@@ -449,7 +453,7 @@ QVariant SessionPrivate::loadSession(Context *c)
 
 bool SessionPrivate::validateSessionId(const QString &id)
 {
-    auto it = id.constBegin();
+    auto it  = id.constBegin();
     auto end = id.constEnd();
     while (it != end) {
         QChar c = *it;
@@ -470,8 +474,8 @@ qint64 SessionPrivate::extendSessionExpires(Session *session, Context *c, qint64
     const QString sid = Session::id(c);
     if (!sid.isEmpty()) {
         const qint64 current = getStoredSessionExpires(session, c, sid);
-        const qint64 cutoff = current - threshold;
-        const qint64 time = QDateTime::currentMSecsSinceEpoch() / 1000;
+        const qint64 cutoff  = current - threshold;
+        const qint64 time    = QDateTime::currentMSecsSinceEpoch() / 1000;
 
         if (!threshold || cutoff <= time || c->stash(SESSION_UPDATED).toBool()) {
             qint64 updated = calculateInitialSessionExpires(session, c, sid);
@@ -487,9 +491,11 @@ qint64 SessionPrivate::extendSessionExpires(Session *session, Context *c, qint64
     }
 }
 
-qint64 SessionPrivate::getStoredSessionExpires(Session *session, Context *c, const QString &sessionid)
+qint64
+    SessionPrivate::getStoredSessionExpires(Session *session, Context *c, const QString &sessionid)
 {
-    const QVariant expires = session->d_ptr->store->getSessionData(c, sessionid, QStringLiteral("expires"), 0);
+    const QVariant expires =
+        session->d_ptr->store->getSessionData(c, sessionid, QStringLiteral("expires"), 0);
     return expires.toLongLong();
 }
 
@@ -522,10 +528,11 @@ void SessionPrivate::saveSessionExpires(Context *c)
                 return;
             }
 
-            const qint64 current = getStoredSessionExpires(m_instance, c, sid);
+            const qint64 current  = getStoredSessionExpires(m_instance, c, sid);
             const qint64 extended = qint64(Session::expires(c));
             if (extended > current) {
-                m_instance->d_ptr->store->storeSessionData(c, sid, QStringLiteral("expires"), extended);
+                m_instance->d_ptr->store->storeSessionData(
+                    c, sid, QStringLiteral("expires"), extended);
             }
         }
     }
@@ -561,11 +568,13 @@ qint64 SessionPrivate::initialSessionExpires(Session *session, Context *c)
     return QDateTime::currentMSecsSinceEpoch() / 1000 + expires;
 }
 
-qint64 SessionPrivate::calculateInitialSessionExpires(Session *session, Context *c, const QString &sessionId)
+qint64 SessionPrivate::calculateInitialSessionExpires(Session *session,
+                                                      Context *c,
+                                                      const QString &sessionId)
 {
-    const qint64 stored = getStoredSessionExpires(session, c, sessionId);
+    const qint64 stored  = getStoredSessionExpires(session, c, sessionId);
     const qint64 initial = initialSessionExpires(session, c);
-    return qMax(initial , stored);
+    return qMax(initial, stored);
 }
 
 qint64 SessionPrivate::resetSessionExpires(Session *session, Context *c, const QString &sessionId)
@@ -594,7 +603,10 @@ void SessionPrivate::updateSessionCuteCookie(Context *c, const Cookie &updated)
 }
 #endif
 
-QNetworkCookie SessionPrivate::makeSessionCookie(Session *session, Context *c, const QString &sid, const QDateTime &expires)
+QNetworkCookie SessionPrivate::makeSessionCookie(Session *session,
+                                                 Context *c,
+                                                 const QString &sid,
+                                                 const QDateTime &expires)
 {
     Q_UNUSED(c)
     QNetworkCookie cookie(session->d_ptr->sessionName.toLatin1(), sid.toLatin1());
@@ -610,7 +622,10 @@ QNetworkCookie SessionPrivate::makeSessionCookie(Session *session, Context *c, c
 }
 
 #if (QT_VERSION < QT_VERSION_CHECK(6, 1, 0))
-Cookie SessionPrivate::makeSessionCuteCookie(Session *session, Context *c, const QString &sid, const QDateTime &expires)
+Cookie SessionPrivate::makeSessionCuteCookie(Session *session,
+                                             Context *c,
+                                             const QString &sid,
+                                             const QDateTime &expires)
 {
     Q_UNUSED(c)
     Cookie cookie(session->d_ptr->sessionName.toLatin1(), sid.toLatin1());
@@ -624,29 +639,42 @@ Cookie SessionPrivate::makeSessionCuteCookie(Session *session, Context *c, const
 }
 #endif
 
-void SessionPrivate::extendSessionId(Session *session, Context *c, const QString &sid, qint64 expires)
+void SessionPrivate::extendSessionId(Session *session,
+                                     Context *c,
+                                     const QString &sid,
+                                     qint64 expires)
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
-    updateSessionCookie(c, makeSessionCookie(session, c, sid, QDateTime::fromMSecsSinceEpoch(expires * 1000)));
+    updateSessionCookie(
+        c, makeSessionCookie(session, c, sid, QDateTime::fromMSecsSinceEpoch(expires * 1000)));
 #else
-    updateSessionCuteCookie(c, makeSessionCuteCookie(session, c, sid, QDateTime::fromMSecsSinceEpoch(expires * 1000)));
+    updateSessionCuteCookie(
+        c, makeSessionCuteCookie(session, c, sid, QDateTime::fromMSecsSinceEpoch(expires * 1000)));
 #endif
 }
 
 void SessionPrivate::setSessionId(Session *session, Context *c, const QString &sid)
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
-    updateSessionCookie(c, makeSessionCookie(session, c, sid,
-                                             QDateTime::fromMSecsSinceEpoch(initialSessionExpires(session, c) * 1000)));
+    updateSessionCookie(c,
+                        makeSessionCookie(session,
+                                          c,
+                                          sid,
+                                          QDateTime::fromMSecsSinceEpoch(
+                                              initialSessionExpires(session, c) * 1000)));
 #else
-    updateSessionCuteCookie(c, makeSessionCuteCookie(session, c, sid,
-                                                     QDateTime::fromMSecsSinceEpoch(initialSessionExpires(session, c) * 1000)));
+    updateSessionCuteCookie(c,
+                            makeSessionCuteCookie(session,
+                                                  c,
+                                                  sid,
+                                                  QDateTime::fromMSecsSinceEpoch(
+                                                      initialSessionExpires(session, c) * 1000)));
 #endif
 }
 
-SessionStore::SessionStore(QObject *parent) : QObject(parent)
+SessionStore::SessionStore(QObject *parent)
+    : QObject(parent)
 {
-
 }
 
 #include "moc_session.cpp"

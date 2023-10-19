@@ -2,25 +2,25 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "request_p.h"
+#include "common.h"
 #include "engine.h"
 #include "enginerequest.h"
-#include "common.h"
 #include "multipartformdataparser.h"
+#include "request_p.h"
 #include "utils.h"
 
 #include <QHostInfo>
-#include <QJsonDocument>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 
 using namespace Cutelyst;
 
-Request::Request(Cutelyst::EngineRequest *engineRequest) :
-    d_ptr(new RequestPrivate)
+Request::Request(Cutelyst::EngineRequest *engineRequest)
+    : d_ptr(new RequestPrivate)
 {
     d_ptr->engineRequest = engineRequest;
-    d_ptr->body = engineRequest->body;
+    d_ptr->body          = engineRequest->body;
 }
 
 Request::~Request()
@@ -62,12 +62,13 @@ QString Request::hostname() const
 
     const QHostInfo ptr = QHostInfo::fromName(d->engineRequest->remoteAddress.toString());
     if (ptr.error() != QHostInfo::NoError) {
-        qCDebug(CUTELYST_REQUEST) << "DNS lookup for the client hostname failed" << d->engineRequest->remoteAddress;
+        qCDebug(CUTELYST_REQUEST) << "DNS lookup for the client hostname failed"
+                                  << d->engineRequest->remoteAddress;
         return ret;
     }
 
     d->remoteHostname = ptr.hostName();
-    ret = d->remoteHostname;
+    ret               = d->remoteHostname;
     return ret;
 }
 
@@ -90,7 +91,8 @@ QUrl Request::uri() const
             uri.setAuthority(d->engineRequest->serverAddress);
         }
 
-        uri.setScheme(d->engineRequest->isSecure ? QStringLiteral("https") : QStringLiteral("http"));
+        uri.setScheme(d->engineRequest->isSecure ? QStringLiteral("https")
+                                                 : QStringLiteral("http"));
 
         // if the path does not start with a slash it cleans the uri
         uri.setPath(QLatin1Char('/') + d->engineRequest->path);
@@ -225,7 +227,7 @@ QStringList Request::bodyParameters(const QString &key) const
     QStringList ret;
 
     const ParamsMultiMap query = bodyParameters();
-    auto it = query.constFind(key);
+    auto it                    = query.constFind(key);
     while (it != query.constEnd() && it.key() == key) {
         ret.prepend(it.value());
         ++it;
@@ -261,7 +263,7 @@ QStringList Request::queryParameters(const QString &key) const
     QStringList ret;
 
     const ParamsMultiMap query = queryParameters();
-    auto it = query.constFind(key);
+    auto it                    = query.constFind(key);
     while (it != query.constEnd() && it.key() == key) {
         ret.prepend(it.value());
         ++it;
@@ -362,7 +364,8 @@ QString Request::protocol() const noexcept
 bool Request::xhr() const noexcept
 {
     Q_D(const Request);
-    return d->engineRequest->headers.header(QStringLiteral("X_REQUESTED_WITH")).compare(u"XMLHttpRequest") == 0;
+    return d->engineRequest->headers.header(QStringLiteral("X_REQUESTED_WITH"))
+               .compare(u"XMLHttpRequest") == 0;
 }
 
 QString Request::remoteUser() const noexcept
@@ -392,7 +395,7 @@ QMultiMap<QString, Cutelyst::Upload *> Request::uploadsMap() const
 Uploads Request::uploads(const QString &name) const
 {
     Uploads ret;
-    const auto map = uploadsMap();
+    const auto map   = uploadsMap();
     const auto range = map.equal_range(name);
     for (auto i = range.first; i != range.second; ++i) {
         ret.push_back(*i);
@@ -421,7 +424,7 @@ QUrl Request::uriWith(const ParamsMultiMap &args, bool append) const
     QUrl ret = uri();
     QUrlQuery urlQuery;
     const ParamsMultiMap query = mangleParams(args, append);
-    auto it = query.constEnd();
+    auto it                    = query.constEnd();
     while (it != query.constBegin()) {
         --it;
         urlQuery.addQueryItem(it.key(), it.value());
@@ -444,10 +447,11 @@ void RequestPrivate::parseUrlQuery() const
         // Check for keywords (no = signs)
         if (engineRequest->query.indexOf('=') < 0) {
             QByteArray aux = engineRequest->query;
-            queryKeywords = Utils::decodePercentEncoding(&aux);
+            queryKeywords  = Utils::decodePercentEncoding(&aux);
         } else {
             if (parserStatus & RequestPrivate::UrlParsed) {
-                queryParam = Utils::decodePercentEncoding(engineRequest->query.data(), engineRequest->query.size());
+                queryParam = Utils::decodePercentEncoding(engineRequest->query.data(),
+                                                          engineRequest->query.size());
             } else {
                 QByteArray aux = engineRequest->query;
                 // We can't manipulate query directly
@@ -466,7 +470,7 @@ void RequestPrivate::parseBody() const
     }
 
     bool sequencial = body->isSequential();
-    qint64 posOrig = body->pos();
+    qint64 posOrig  = body->pos();
     if (sequencial && posOrig) {
         qCWarning(CUTELYST_REQUEST) << "Can not parse sequential post body out of beginning";
         parserStatus |= RequestPrivate::BodyParsed;
@@ -474,7 +478,7 @@ void RequestPrivate::parseBody() const
     }
 
     const QString contentTypeKey = QStringLiteral("CONTENT_TYPE");
-    const QString contentType = engineRequest->headers.header(contentTypeKey);
+    const QString contentType    = engineRequest->headers.header(contentTypeKey);
     if (contentType.startsWith(u"application/x-www-form-urlencoded", Qt::CaseInsensitive)) {
         // Parse the query (BODY) of type "application/x-www-form-urlencoded"
         // parameters ie "?foo=bar&bar=baz"
@@ -483,8 +487,8 @@ void RequestPrivate::parseBody() const
         }
 
         QByteArray line = body->readAll();
-        bodyParam = Utils::decodePercentEncoding(line.data(), line.size());
-        bodyData = QVariant::fromValue(bodyParam);
+        bodyParam       = Utils::decodePercentEncoding(line.data(), line.size());
+        bodyData        = QVariant::fromValue(bodyParam);
     } else if (contentType.startsWith(u"multipart/form-data", Qt::CaseInsensitive)) {
         if (posOrig) {
             body->seek(0);
@@ -492,14 +496,15 @@ void RequestPrivate::parseBody() const
 
         const Uploads ups = MultiPartFormDataParser::parse(body, contentType);
         for (Upload *upload : ups) {
-            if (upload->filename().isEmpty() && upload->headers().header(contentTypeKey).isEmpty()) {
+            if (upload->filename().isEmpty() &&
+                upload->headers().header(contentTypeKey).isEmpty()) {
                 bodyParam.insert(upload->name(), QString::fromUtf8(upload->readAll()));
                 upload->seek(0);
             }
             uploadsMap.insert(upload->name(), upload);
         }
         uploads = ups;
-//        bodyData = QVariant::fromValue(uploadsMap);
+        //        bodyData = QVariant::fromValue(uploadsMap);
     } else if (contentType.startsWith(u"application/json", Qt::CaseInsensitive)) {
         if (posOrig) {
             body->seek(0);
@@ -546,7 +551,7 @@ static int nextNonWhitespace(const QString &text, int from, int length)
         if (isLWS(text.at(from)))
             ++from;
         else
-            return from;        // non-whitespace
+            return from; // non-whitespace
     }
 
     // reached the end
@@ -561,11 +566,11 @@ static std::pair<QString, QString> nextField(const QString &text, int &position)
     //    (2)  token = token
     //    (3)  token = quoted-string
     const int length = text.length();
-    position = nextNonWhitespace(text, position, length);
+    position         = nextNonWhitespace(text, position, length);
 
     int semiColonPosition = findNextSplit(text, position, length);
     if (semiColonPosition < 0)
-        semiColonPosition = length; //no ';' means take everything to end of string
+        semiColonPosition = length; // no ';' means take everything to end of string
 
     int equalsPosition = text.indexOf(QLatin1Char('='), position);
     if (equalsPosition < 0 || equalsPosition > semiColonPosition) {
@@ -585,8 +590,8 @@ static std::pair<QString, QString> nextField(const QString &text, int &position)
 void RequestPrivate::parseCookies() const
 {
     const QString cookieString = engineRequest->headers.header(QStringLiteral("COOKIE"));
-    int position = 0;
-    const int length = cookieString.length();
+    int position               = 0;
+    const int length           = cookieString.length();
     while (position < length) {
         const auto field = nextField(cookieString, position);
         if (field.first.isEmpty()) {

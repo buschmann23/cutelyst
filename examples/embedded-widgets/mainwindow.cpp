@@ -1,16 +1,15 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 
 #include "embeddedapp.h"
+#include "ui_mainwindow.h"
 
-#include <server/server.h>
 #include <Cutelyst/Context>
 #include <Cutelyst/Response>
+#include <server/server.h>
 
 #include <QMessageBox>
-
-#include <QNetworkReply>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,7 +24,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->serverReceivedHeaders->setModel(m_serverReceivedHeaders);
     ui->clientReceivedHeaders->setModel(m_clientReceivedHeaders);
 
-    connect(ui->serverPortSB, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::updateUrl);
+    connect(ui->serverPortSB,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            this,
+            &MainWindow::updateUrl);
     connect(ui->clientSendPB, &QPushButton::clicked, this, &MainWindow::clientSend);
     connect(ui->serverListenPB, &QPushButton::clicked, this, &MainWindow::listenClicked);
     connect(ui->serverStopListenPB, &QPushButton::clicked, this, [=] {
@@ -36,10 +38,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_server, &Cutelyst::Server::ready, this, [=] {
         ui->serverStopListenPB->setEnabled(true);
     });
-    connect(m_server, &Cutelyst::Server::stopped, this, [=] {
-        ui->serverListenPB->setEnabled(true);
-    });
-    connect(m_server, &Cutelyst::Server::errorOccured, this, [=] (const QString &message) {
+    connect(
+        m_server, &Cutelyst::Server::stopped, this, [=] { ui->serverListenPB->setEnabled(true); });
+    connect(m_server, &Cutelyst::Server::errorOccured, this, [=](const QString &message) {
         ui->serverListenPB->setEnabled(true);
         ui->serverStopListenPB->setEnabled(false);
         QMessageBox::critical(this, tr("Failed to start server"), message);
@@ -60,10 +61,13 @@ void MainWindow::clientSend()
     if (!path.startsWith(QLatin1Char('/'))) {
         path.prepend(QLatin1Char('/'));
     }
-    QUrl url(QLatin1String("http://localhost:") + QString::number(ui->serverPortSB->value()) + path);
+    QUrl url(QLatin1String("http://localhost:") + QString::number(ui->serverPortSB->value()) +
+             path);
     QNetworkRequest request(url);
 
-    QNetworkReply *reply = m_nam->sendCustomRequest(request, ui->clientMethodLE->currentText().toLatin1(), ui->clientBodyPTE->toPlainText().toUtf8());
+    QNetworkReply *reply = m_nam->sendCustomRequest(request,
+                                                    ui->clientMethodLE->currentText().toLatin1(),
+                                                    ui->clientBodyPTE->toPlainText().toUtf8());
     connect(reply, &QNetworkReply::finished, this, [=] {
         reply->deleteLater();
 
@@ -72,19 +76,22 @@ void MainWindow::clientSend()
         const QByteArray body = reply->readAll();
         ui->clientResponsePTE->setPlainText(QString::fromUtf8(body));
         int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QString statusReason = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-        qDebug() << "client finished" << body.size() << status << reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
-        ui->clientResponseLE->setText(QString::number(status) + QLatin1String(" - ") + statusReason);
+        QString statusReason =
+            reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
+        qDebug() << "client finished" << body.size() << status
+                 << reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
+        ui->clientResponseLE->setText(QString::number(status) + QLatin1String(" - ") +
+                                      statusReason);
 
         m_clientReceivedHeaders->clear();
         for (auto &header : reply->rawHeaderPairs()) {
             qDebug() << "client " << header.first << header.second;
-            auto keyItem = new QStandardItem(QString::fromLatin1(header.first));
+            auto keyItem   = new QStandardItem(QString::fromLatin1(header.first));
             auto valueItem = new QStandardItem(QString::fromLatin1(header.second));
             m_clientReceivedHeaders->appendRow({
-                                                   keyItem,
-                                                   valueItem,
-                                               });
+                keyItem,
+                valueItem,
+            });
         }
     });
     ui->clientSendPB->setEnabled(false);
@@ -94,8 +101,9 @@ void MainWindow::listenClicked()
 {
     ui->serverListenPB->setEnabled(false);
 
-    const QString address = QLatin1String("localhost:") + QString::number(ui->serverPortSB->value());
-    m_server->setHttpSocket({ address });
+    const QString address =
+        QLatin1String("localhost:") + QString::number(ui->serverPortSB->value());
+    m_server->setHttpSocket({address});
     m_server->start(m_app);
 }
 
@@ -113,14 +121,14 @@ void MainWindow::indexCalled(Cutelyst::Context *c)
 
     m_serverReceivedHeaders->clear();
     const auto headersData = c->request()->headers().data();
-    auto hIt = headersData.begin();
+    auto hIt               = headersData.begin();
     while (hIt != headersData.end()) {
-        auto keyItem = new QStandardItem(hIt.key());
+        auto keyItem   = new QStandardItem(hIt.key());
         auto valueItem = new QStandardItem(hIt.value());
         m_serverReceivedHeaders->appendRow({
-                                               keyItem,
-                                               valueItem,
-                                           });
+            keyItem,
+            valueItem,
+        });
         ++hIt;
     }
 
@@ -131,6 +139,7 @@ void MainWindow::indexCalled(Cutelyst::Context *c)
 
 void MainWindow::updateUrl()
 {
-    const QString url = QLatin1String("http://localhost:") + QString::number(ui->serverPortSB->value());
+    const QString url =
+        QLatin1String("http://localhost:") + QString::number(ui->serverPortSB->value());
     ui->serverL->setText(tr("Server: <a href=\"%1\">%1</a>").arg(url));
 }

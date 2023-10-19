@@ -18,9 +18,9 @@ using namespace Cutelyst;
  *
  * Cutelyst::ViewJSON is a Cutelyst View handler that returns stash data in JSON format.
  */
-ViewJson::ViewJson(QObject *parent, const QString &name) : View(new ViewJsonPrivate, parent, name)
+ViewJson::ViewJson(QObject *parent, const QString &name)
+    : View(new ViewJsonPrivate, parent, name)
 {
-
 }
 
 ViewJson::JsonFormat ViewJson::outputFormat() const
@@ -58,7 +58,7 @@ void ViewJson::setExposeStash(const QString &key)
 {
     Q_D(ViewJson);
     d->exposeMode = ViewJson::String;
-    d->exposeKey = key;
+    d->exposeKey  = key;
 }
 
 void ViewJson::setExposeStash(const QStringList &keys)
@@ -72,7 +72,7 @@ void ViewJson::setExposeStash(const QRegularExpression &re)
 {
     Q_D(ViewJson);
     d->exposeMode = ViewJson::RegularExpression;
-    d->exposeRE = re;
+    d->exposeRE   = re;
 }
 
 void ViewJson::setXJsonHeader(bool enable)
@@ -142,7 +142,8 @@ QByteArray ViewJson::render(Context *c) const
 
     Response *res = c->response();
     if (d->xJsonHeader && c->request()->headers().contains(QStringLiteral("X_PROTOTYPE_VERSION"))) {
-        res->setHeader(QStringLiteral("X_JSON"), QStringLiteral("eval(\"(\"+this.transport.responseText+\")\")"));
+        res->setHeader(QStringLiteral("X_JSON"),
+                       QStringLiteral("eval(\"(\"+this.transport.responseText+\")\")"));
     }
 
     res->setContentType(QStringLiteral("application/json"));

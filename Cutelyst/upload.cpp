@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: (C) 2014-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "upload_p.h"
 #include "common.h"
+#include "upload_p.h"
 
 #include <QDir>
 #include <QFile>
@@ -34,7 +34,7 @@ bool Upload::save(const QString &newName)
 {
     Q_D(Upload);
 
-    bool error = false;
+    bool error           = false;
     QString fileTemplate = QStringLiteral("%1/qt_temp.XXXXXX");
     QFile out(fileTemplate.arg(QFileInfo(newName).path()));
     if (!out.open(QIODevice::ReadWrite)) {
@@ -50,12 +50,10 @@ bool Upload::save(const QString &newName)
         seek(0);
 
         char block[4096];
-        qint64 totalRead = 0;
         while (!atEnd()) {
             qint64 in = read(block, sizeof(block));
             if (in <= 0)
                 break;
-            totalRead += in;
             if (in != out.write(block, in)) {
                 setErrorString(QLatin1String("Failure to write block"));
                 qCWarning(CUTELYST_UPLOAD) << errorString();
@@ -94,17 +92,16 @@ QTemporaryFile *Upload::createTemporaryFile(const QString &templateName)
     }
 
     if (ret->open()) {
-        bool error = false;
+        bool error     = false;
         qint64 posOrig = d->pos;
         seek(0);
 
         char block[4096];
-        qint64 totalRead = 0;
         while (!atEnd()) {
             qint64 in = read(block, sizeof(block));
             if (in <= 0)
                 break;
-            totalRead += in;
+
             if (in != ret->write(block, in)) {
                 setErrorString(QLatin1String("Failure to write block"));
                 qCWarning(CUTELYST_UPLOAD) << errorString();
@@ -154,13 +151,13 @@ bool Upload::seek(qint64 pos)
     return false;
 }
 
-Upload::Upload(UploadPrivate *prv) :
-    d_ptr(prv)
+Upload::Upload(UploadPrivate *prv)
+    : d_ptr(prv)
 {
     Q_D(Upload);
     open(prv->device->openMode());
     const QString disposition = prv->headers.contentDisposition();
-    int start = disposition.indexOf(u"name=\"");
+    int start                 = disposition.indexOf(u"name=\"");
     if (start != -1) {
         start += 6;
         int end = disposition.indexOf(u'"', start);
@@ -196,8 +193,7 @@ qint64 Upload::readData(char *data, qint64 maxlen)
     qint64 posOrig = d->device->pos();
 
     d->device->seek(d->startOffset + d->pos);
-    qint64 len = d->device->read(data,
-                                 qMin(size() - d->pos, maxlen));
+    qint64 len = d->device->read(data, qMin(size() - d->pos, maxlen));
     d->device->seek(posOrig);
     d->pos += len;
     return len;
@@ -209,8 +205,7 @@ qint64 Upload::readLineData(char *data, qint64 maxlen)
     qint64 posOrig = d->device->pos();
 
     d->device->seek(d->startOffset + d->pos);
-    qint64 len = d->device->readLine(data,
-                                     qMin(size() - d->pos, maxlen));
+    qint64 len = d->device->readLine(data, qMin(size() - d->pos, maxlen));
     d->device->seek(posOrig);
     d->pos += len;
     return len;

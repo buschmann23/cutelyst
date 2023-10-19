@@ -7,15 +7,17 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#include <grantlee/taglibraryinterface.h>
+#    include <grantlee/taglibraryinterface.h>
 
-#if defined(cutelyst_grantlee_urifor_EXPORTS)
-#  define CUTELYST_GRANTLEE_URIFOR_EXPORT Q_DECL_EXPORT
-#else
-#  define CUTELYST_GRANTLEE_URIFOR_EXPORT Q_DECL_IMPORT
-#endif
+#    if defined(cutelyst_grantlee_urifor_EXPORTS)
+#        define CUTELYST_GRANTLEE_URIFOR_EXPORT Q_DECL_EXPORT
+#    else
+#        define CUTELYST_GRANTLEE_URIFOR_EXPORT Q_DECL_IMPORT
+#    endif
 
-class CutelystGrantlee final : public QObject, public Grantlee::TagLibraryInterface
+class CutelystGrantlee final
+    : public QObject
+    , public Grantlee::TagLibraryInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.grantlee.TagLibraryInterface/1.0")
@@ -23,7 +25,8 @@ class CutelystGrantlee final : public QObject, public Grantlee::TagLibraryInterf
 public:
     explicit CutelystGrantlee(QObject *parent = nullptr);
 
-    virtual QHash<QString, Grantlee::AbstractNodeFactory *> nodeFactories(const QString &name = QString()) override;
+    virtual QHash<QString, Grantlee::AbstractNodeFactory *>
+        nodeFactories(const QString &name = QString()) override;
 
     virtual QHash<QString, Grantlee::Filter *> filters(const QString &name = QString()) override;
 };

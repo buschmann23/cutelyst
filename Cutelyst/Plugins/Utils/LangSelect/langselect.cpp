@@ -9,16 +9,15 @@
 #include <Cutelyst/Context>
 #include <Cutelyst/Plugins/Session/Session>
 #include <Cutelyst/Response>
+#include <map>
+#include <utility>
 
 #include <QDir>
 #include <QFileInfo>
 #include <QLoggingCategory>
-#include <QUrl>
 #include <QNetworkCookie>
+#include <QUrl>
 #include <QUrlQuery>
-
-#include <map>
-#include <utility>
 
 Q_LOGGING_CATEGORY(C_LANGSELECT, "cutelyst.plugin.langselect", QtWarningMsg)
 
@@ -28,22 +27,23 @@ static thread_local LangSelect *lsp = nullptr;
 
 #define SELECTION_TRIED QStringLiteral("_c_langselect_tried")
 
-LangSelect::LangSelect(Application *parent, Cutelyst::LangSelect::Source source) : Plugin(parent)
-  , d_ptr(new LangSelectPrivate)
+LangSelect::LangSelect(Application *parent, Cutelyst::LangSelect::Source source)
+    : Plugin(parent)
+    , d_ptr(new LangSelectPrivate)
 {
     Q_D(LangSelect);
-    d->source = source;
+    d->source     = source;
     d->autoDetect = true;
 }
 
-LangSelect::LangSelect(Application *parent) : Plugin(parent)
-  , d_ptr(new LangSelectPrivate)
+LangSelect::LangSelect(Application *parent)
+    : Plugin(parent)
+    , d_ptr(new LangSelectPrivate)
 {
     Q_D(LangSelect);
-    d->source = AcceptHeader;
+    d->source     = AcceptHeader;
     d->autoDetect = false;
 }
-
 
 LangSelect::~LangSelect()
 {
@@ -100,7 +100,8 @@ void LangSelect::setSupportedLocales(const QVector<QLocale> &locales)
         if (Q_LIKELY(l.language() != QLocale::C)) {
             d->locales.push_back(l);
         } else {
-            qCWarning(C_LANGSELECT) << "Can not add invalid locale" << l << "to the list of supported locales.";
+            qCWarning(C_LANGSELECT)
+                << "Can not add invalid locale" << l << "to the list of supported locales.";
         }
     }
 }
@@ -115,7 +116,9 @@ void LangSelect::setSupportedLocales(const QStringList &locales)
         if (Q_LIKELY(locale.language() != QLocale::C)) {
             d->locales.push_back(locale);
         } else {
-            qCWarning(C_LANGSELECT, "Can not add invalid locale \"%s\" to the list of supported locales.", qUtf8Printable(l));
+            qCWarning(C_LANGSELECT,
+                      "Can not add invalid locale \"%s\" to the list of supported locales.",
+                      qUtf8Printable(l));
         }
     }
 }
@@ -126,7 +129,8 @@ void LangSelect::addSupportedLocale(const QLocale &locale)
         Q_D(LangSelect);
         d->locales.push_back(locale);
     } else {
-        qCWarning(C_LANGSELECT) << "Can not add invalid locale" << locale << "to the list of supported locales.";
+        qCWarning(C_LANGSELECT) << "Can not add invalid locale" << locale
+                                << "to the list of supported locales.";
     }
 }
 
@@ -137,45 +141,62 @@ void LangSelect::addSupportedLocale(const QString &locale)
         Q_D(LangSelect);
         d->locales.push_back(l);
     } else {
-        qCWarning(C_LANGSELECT, "Can not add invalid locale \"%s\" to the list of supported locales.", qUtf8Printable(locale));
+        qCWarning(C_LANGSELECT,
+                  "Can not add invalid locale \"%s\" to the list of supported locales.",
+                  qUtf8Printable(locale));
     }
 }
 
-void LangSelect::setLocalesFromDir(const QString &path, const QString &name, const QString &prefix, const QString &suffix)
+void LangSelect::setLocalesFromDir(const QString &path,
+                                   const QString &name,
+                                   const QString &prefix,
+                                   const QString &suffix)
 {
     Q_D(LangSelect);
     d->locales.clear();
     if (Q_LIKELY(!path.isEmpty() && !name.isEmpty())) {
         const QDir dir(path);
         if (Q_LIKELY(dir.exists())) {
-            const auto _pref = prefix.isEmpty() ? QStringLiteral(".") : prefix;
-            const auto _suff = suffix.isEmpty() ? QStringLiteral(".qm") : suffix;
+            const auto _pref     = prefix.isEmpty() ? QStringLiteral(".") : prefix;
+            const auto _suff     = suffix.isEmpty() ? QStringLiteral(".qm") : suffix;
             const QString filter = name + _pref + u'*' + _suff;
-            const auto files = dir.entryInfoList({name}, QDir::Files);
+            const auto files     = dir.entryInfoList({name}, QDir::Files);
             if (Q_LIKELY(!files.empty())) {
                 d->locales.reserve(files.size());
                 bool shrinkToFit = false;
                 for (const QFileInfo &fi : files) {
-                    const auto fn = fi.fileName();
+                    const auto fn      = fi.fileName();
                     const auto prefIdx = fn.indexOf(_pref);
-                    const auto locPart = fn.mid(prefIdx + _pref.length(), fn.length() - prefIdx - _suff.length() - _pref.length());
+                    const auto locPart =
+                        fn.mid(prefIdx + _pref.length(),
+                               fn.length() - prefIdx - _suff.length() - _pref.length());
                     QLocale l(locPart);
                     if (Q_LIKELY(l.language() != QLocale::C)) {
                         d->locales.push_back(l);
-                        qCDebug(C_LANGSELECT, "Added locale \"%s\" to the list of supported locales.", qUtf8Printable(locPart));
+                        qCDebug(C_LANGSELECT,
+                                "Added locale \"%s\" to the list of supported locales.",
+                                qUtf8Printable(locPart));
                     } else {
                         shrinkToFit = true;
-                        qCWarning(C_LANGSELECT, "Can not add invalid locale \"%s\" to the list of supported locales.", qUtf8Printable(locPart));
+                        qCWarning(
+                            C_LANGSELECT,
+                            "Can not add invalid locale \"%s\" to the list of supported locales.",
+                            qUtf8Printable(locPart));
                     }
                 }
                 if (shrinkToFit) {
                     d->locales.squeeze();
                 }
             } else {
-                qCWarning(C_LANGSELECT, "Can not find translation files for \"%s\" in \"%s\".", qUtf8Printable(filter), qUtf8Printable(path));
+                qCWarning(C_LANGSELECT,
+                          "Can not find translation files for \"%s\" in \"%s\".",
+                          qUtf8Printable(filter),
+                          qUtf8Printable(path));
             }
         } else {
-            qCWarning(C_LANGSELECT, "Can not set locales from not existing directory \"%s\".", qUtf8Printable(path));
+            qCWarning(C_LANGSELECT,
+                      "Can not set locales from not existing directory \"%s\".",
+                      qUtf8Printable(path));
         }
     } else {
         qCWarning(C_LANGSELECT, "Can not set locales from dir with empty path or name.");
@@ -199,10 +220,15 @@ void LangSelect::setLocalesFromDirs(const QString &path, const QString &name)
                         QLocale l(subDir);
                         if (Q_LIKELY(l.language() != QLocale::C)) {
                             d->locales.push_back(l);
-                            qCDebug(C_LANGSELECT, "Added locale \"%s\" to the list of supported locales.", qUtf8Printable(subDir));
-                        }  else {
+                            qCDebug(C_LANGSELECT,
+                                    "Added locale \"%s\" to the list of supported locales.",
+                                    qUtf8Printable(subDir));
+                        } else {
                             shrinkToFit = true;
-                            qCWarning(C_LANGSELECT, "Can not add invalid locale \"%s\" to the list of supported locales.", qUtf8Printable(subDir));
+                            qCWarning(C_LANGSELECT,
+                                      "Can not add invalid locale \"%s\" to the list of supported "
+                                      "locales.",
+                                      qUtf8Printable(subDir));
                         }
                     } else {
                         shrinkToFit = true;
@@ -213,7 +239,9 @@ void LangSelect::setLocalesFromDirs(const QString &path, const QString &name)
                 }
             }
         } else {
-            qCWarning(C_LANGSELECT, "Can not set locales from not existing directory \"%s\".", qUtf8Printable(path));
+            qCWarning(C_LANGSELECT,
+                      "Can not set locales from not existing directory \"%s\".",
+                      qUtf8Printable(path));
         }
     } else {
         qCWarning(C_LANGSELECT, "Can not set locales from dirs with empty path or names.");
@@ -256,7 +284,8 @@ void LangSelect::setSubDomainMap(const QMap<QString, QLocale> &map)
             d->subDomainMap.insert(i.key(), i.value());
             d->locales.append(i.value());
         } else {
-            qCWarning(C_LANGSELECT) << "Can not add invalid locale" << i.value() << "for subdomain" << i.key() << "to the subdomain map.";
+            qCWarning(C_LANGSELECT) << "Can not add invalid locale" << i.value() << "for subdomain"
+                                    << i.key() << "to the subdomain map.";
         }
         ++i;
     }
@@ -275,7 +304,8 @@ void LangSelect::setDomainMap(const QMap<QString, QLocale> &map)
             d->domainMap.insert(i.key(), i.value());
             d->locales.append(i.value());
         } else {
-            qCWarning(C_LANGSELECT) << "Can not add invalid locale" << i.value() << "for domain" << i.key() << "to the domain map.";
+            qCWarning(C_LANGSELECT) << "Can not add invalid locale" << i.value() << "for domain"
+                                    << i.key() << "to the domain map.";
         }
         ++i;
     }
@@ -300,7 +330,9 @@ void LangSelect::setLanguageCodeStashKey(const QString &key)
     if (Q_LIKELY(!key.isEmpty())) {
         d->langStashKey = key;
     } else {
-        qCWarning(C_LANGSELECT) << "Can not set an empty key name for the language code stash key. Using current key name" << d->langStashKey;
+        qCWarning(C_LANGSELECT) << "Can not set an empty key name for the language code stash key. "
+                                   "Using current key name"
+                                << d->langStashKey;
     }
 }
 
@@ -310,7 +342,9 @@ void LangSelect::setLanguageDirStashKey(const QString &key)
     if (Q_LIKELY(!key.isEmpty())) {
         d->dirStashKey = key;
     } else {
-        qCWarning(C_LANGSELECT) << "Can not set an empty key name for the language direction stash key. Using current key name" << d->dirStashKey;
+        qCWarning(C_LANGSELECT) << "Can not set an empty key name for the language direction stash "
+                                   "key. Using current key name"
+                                << d->dirStashKey;
     }
 }
 
@@ -331,7 +365,7 @@ bool LangSelect::fromUrlQuery(Context *c, const QString &key)
         return true;
     }
 
-    const auto d = lsp->d_ptr;
+    const auto d    = lsp->d_ptr;
     const auto _key = !key.isEmpty() ? key : d->queryKey;
     if (!d->getFromQuery(c, _key)) {
         if (!d->getFromHeader(c)) {
@@ -355,9 +389,9 @@ bool LangSelect::fromSession(Context *c, const QString &key)
         return foundInSession;
     }
 
-    const auto d = lsp->d_ptr;
+    const auto d    = lsp->d_ptr;
     const auto _key = !key.isEmpty() ? key : d->sessionKey;
-    foundInSession = d->getFromSession(c, _key);
+    foundInSession  = d->getFromSession(c, _key);
     if (!foundInSession) {
         if (!d->getFromHeader(c)) {
             d->setFallback(c);
@@ -378,9 +412,9 @@ bool LangSelect::fromCookie(Context *c, const QString &name)
         return foundInCookie;
     }
 
-    const auto d = lsp->d_ptr;
+    const auto d     = lsp->d_ptr;
     const auto _name = !name.isEmpty() ? name : d->cookieName;
-    foundInCookie = d->getFromCookie(c, _name);
+    foundInCookie    = d->getFromCookie(c, _name);
     if (!foundInCookie) {
         if (!d->getFromHeader(c)) {
             d->setFallback(c);
@@ -401,8 +435,8 @@ bool LangSelect::fromSubDomain(Context *c, const QMap<QString, QLocale> &subDoma
         return foundInSubDomain;
     }
 
-    const auto d = lsp->d_ptr;
-    const auto _map = !subDomainMap.empty() ? subDomainMap : d->subDomainMap;
+    const auto d     = lsp->d_ptr;
+    const auto _map  = !subDomainMap.empty() ? subDomainMap : d->subDomainMap;
     foundInSubDomain = d->getFromSubdomain(c, _map);
     if (!foundInSubDomain) {
         if (!d->getFromHeader(c)) {
@@ -415,7 +449,7 @@ bool LangSelect::fromSubDomain(Context *c, const QMap<QString, QLocale> &subDoma
     return foundInSubDomain;
 }
 
-bool LangSelect::fromDomain(Context *c, const QMap<QString,QLocale> &domainMap)
+bool LangSelect::fromDomain(Context *c, const QMap<QString, QLocale> &domainMap)
 {
     bool foundInDomain = false;
 
@@ -424,9 +458,9 @@ bool LangSelect::fromDomain(Context *c, const QMap<QString,QLocale> &domainMap)
         return foundInDomain;
     }
 
-    const auto d = lsp->d_ptr;
+    const auto d    = lsp->d_ptr;
     const auto _map = !domainMap.empty() ? domainMap : d->domainMap;
-    foundInDomain = d->getFromDomain(c, _map);
+    foundInDomain   = d->getFromDomain(c, _map);
     if (!foundInDomain) {
         if (!d->getFromHeader(c)) {
             d->setFallback(c);
@@ -456,8 +490,8 @@ bool LangSelect::fromPath(Context *c, const QString &locale)
         if (!d->getFromHeader(c)) {
             d->setFallback(c);
         }
-        auto uri = c->req()->uri();
-        auto pathParts = uri.path().split(u'/');
+        auto uri             = c->req()->uri();
+        auto pathParts       = uri.path().split(u'/');
         const auto localeIdx = pathParts.indexOf(locale);
         pathParts[localeIdx] = c->locale().bcp47Name().toLower();
         uri.setPath(pathParts.join(u'/'));
@@ -501,7 +535,6 @@ bool LangSelectPrivate::detectLocale(Context *c, LangSelect::Source _source, boo
     if (foundIn == LangSelect::Fallback && getFromHeader(c)) {
         foundIn = LangSelect::AcceptHeader;
     }
-
 
     if (foundIn == LangSelect::Fallback) {
         setFallback(c);
@@ -570,10 +603,11 @@ bool LangSelectPrivate::getFromSession(Context *c, const QString &key) const
 bool LangSelectPrivate::getFromSubdomain(Context *c, const QMap<QString, QLocale> &map) const
 {
     const auto domain = c->req()->uri().host();
-    auto i = map.constBegin();
+    auto i            = map.constBegin();
     while (i != map.constEnd()) {
         if (domain.startsWith(i.key())) {
-            qCDebug(C_LANGSELECT) << "Found valid locale" << i.value() << "in subdomain map for domain" << domain;
+            qCDebug(C_LANGSELECT) << "Found valid locale" << i.value()
+                                  << "in subdomain map for domain" << domain;
             c->setLocale(i.value());
             return true;
         }
@@ -584,7 +618,8 @@ bool LangSelectPrivate::getFromSubdomain(Context *c, const QMap<QString, QLocale
     if (domainParts.size() > 2) {
         const QLocale l(domainParts.at(0));
         if (l.language() != QLocale::C && locales.contains(l)) {
-            qCDebug(C_LANGSELECT) << "Found supported locale" << l << "in subdomain of domain" << domain;
+            qCDebug(C_LANGSELECT) << "Found supported locale" << l << "in subdomain of domain"
+                                  << domain;
             c->setLocale(l);
             return true;
         }
@@ -596,10 +631,11 @@ bool LangSelectPrivate::getFromSubdomain(Context *c, const QMap<QString, QLocale
 bool LangSelectPrivate::getFromDomain(Context *c, const QMap<QString, QLocale> &map) const
 {
     const auto domain = c->req()->uri().host();
-    auto i = map.constBegin();
+    auto i            = map.constBegin();
     while (i != map.constEnd()) {
         if (domain.endsWith(i.key())) {
-            qCDebug(C_LANGSELECT) << "Found valid locale" << i.value() << "in domain map for domain" << domain;
+            qCDebug(C_LANGSELECT) << "Found valid locale" << i.value() << "in domain map for domain"
+                                  << domain;
             c->setLocale(i.value());
             return true;
         }
@@ -624,16 +660,16 @@ bool LangSelectPrivate::getFromHeader(Context *c, const QString &name) const
     if (detectFromHeader) {
         const auto accpetedLangs = c->req()->header(name).split(u',', Qt::SkipEmptyParts);
         if (Q_LIKELY(!accpetedLangs.empty())) {
-            std::map<float,QLocale> langMap;
+            std::map<float, QLocale> langMap;
             for (const QString &al : accpetedLangs) {
                 const auto idx = al.indexOf(u';');
                 float priority = 1.0f;
                 QString langPart;
                 bool ok = true;
                 if (idx > -1) {
-                    langPart = al.left(idx);
+                    langPart       = al.left(idx);
                     const auto ref = QStringView(al).mid(idx + 1);
-                    priority = ref.mid(ref.indexOf(u'=') + 1).toFloat(&ok);
+                    priority       = ref.mid(ref.indexOf(u'=') + 1).toFloat(&ok);
                 } else {
                     langPart = al;
                 }
@@ -650,20 +686,22 @@ bool LangSelectPrivate::getFromHeader(Context *c, const QString &name) const
                 while (i != langMap.crend()) {
                     if (locales.contains(i->second)) {
                         c->setLocale(i->second);
-                        qCDebug(C_LANGSELECT) << "Selected locale" << c->locale() << "from" << name << "header";
+                        qCDebug(C_LANGSELECT)
+                            << "Selected locale" << c->locale() << "from" << name << "header";
                         return true;
                     }
                     ++i;
                 }
                 // if there is no exact match, lets try to find a locale
                 // where at least the language matches
-                i = langMap.crbegin();
+                i                       = langMap.crbegin();
                 const auto constLocales = locales;
                 while (i != langMap.crend()) {
                     for (const QLocale &l : constLocales) {
                         if (l.language() == i->second.language()) {
                             c->setLocale(l);
-                            qCDebug(C_LANGSELECT) << "Selected locale" << c->locale() << "from" << name << "header";
+                            qCDebug(C_LANGSELECT)
+                                << "Selected locale" << c->locale() << "from" << name << "header";
                             return true;
                         }
                     }
@@ -716,10 +754,10 @@ void LangSelectPrivate::setContentLanguage(Context *c) const
     if (addContentLanguageHeader) {
         c->res()->setHeader(QStringLiteral("Content-Language"), c->locale().bcp47Name());
     }
-    c->stash({
-                 {langStashKey, c->locale().bcp47Name()},
-                 {dirStashKey, (c->locale().textDirection() == Qt::LeftToRight ? QStringLiteral("ltr") : QStringLiteral("rtl"))}
-             });
+    c->stash({{langStashKey, c->locale().bcp47Name()},
+              {dirStashKey,
+               (c->locale().textDirection() == Qt::LeftToRight ? QStringLiteral("ltr")
+                                                               : QStringLiteral("rtl"))}});
 }
 
 void LangSelectPrivate::beforePrepareAction(Context *c, bool *skipMethod) const

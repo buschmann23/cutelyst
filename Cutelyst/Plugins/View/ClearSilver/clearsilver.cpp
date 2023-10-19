@@ -2,23 +2,22 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "clearsilver_p.h"
-
-#include "context.h"
 #include "action.h"
+#include "clearsilver_p.h"
+#include "context.h"
 #include "response.h"
 
-#include <QString>
 #include <QFile>
+#include <QString>
 #include <QtCore/QLoggingCategory>
 
 Q_LOGGING_CATEGORY(CUTELYST_CLEARSILVER, "cutelyst.clearsilver", QtWarningMsg)
 
 using namespace Cutelyst;
 
-ClearSilver::ClearSilver(QObject *parent, const QString &name) : View(new ClearSilverPrivate, parent, name)
+ClearSilver::ClearSilver(QObject *parent, const QString &name)
+    : View(new ClearSilverPrivate, parent, name)
 {
-
 }
 
 QStringList ClearSilver::includePaths() const
@@ -60,13 +59,13 @@ void ClearSilver::setWrapper(const QString &name)
     Q_EMIT changed();
 }
 
-NEOERR* cutelyst_render(void *user, char *data)
+NEOERR *cutelyst_render(void *user, char *data)
 {
-    QByteArray *body = static_cast<QByteArray*>(user);
+    QByteArray *body = static_cast<QByteArray *>(user);
     if (body) {
         body->append(data);
     }
-//    qDebug() << "_render" << body << data;
+    //    qDebug() << "_render" << body << data;
     return nullptr;
 }
 
@@ -76,19 +75,20 @@ QByteArray ClearSilver::render(Context *c) const
 
     QByteArray output;
     const QVariantHash &stash = c->stash();
-    QString templateFile = stash.value(QStringLiteral("template")).toString();
+    QString templateFile      = stash.value(QStringLiteral("template")).toString();
     if (templateFile.isEmpty()) {
         if (c->action() && !c->action()->reverse().isEmpty()) {
             templateFile = c->action()->reverse() + d->extension;
         }
 
         if (templateFile.isEmpty()) {
-            c->error(QStringLiteral("Cannot render template, template name or template stash key not defined"));
+            c->error(QStringLiteral(
+                "Cannot render template, template name or template stash key not defined"));
             return output;
         }
     }
 
-    qCDebug(CUTELYST_CLEARSILVER) << "Rendering template" <<templateFile;
+    qCDebug(CUTELYST_CLEARSILVER) << "Rendering template" << templateFile;
     QByteArray body;
     if (!d->render(c, templateFile, stash, body)) {
         return output;
@@ -110,10 +110,10 @@ QByteArray ClearSilver::render(Context *c) const
     return output;
 }
 
-NEOERR* findFile(void *c, HDF *hdf, const char *filename, char **contents)
+NEOERR *findFile(void *c, HDF *hdf, const char *filename, char **contents)
 {
     Q_UNUSED(hdf)
-    const ClearSilverPrivate *priv = static_cast<ClearSilverPrivate*>(c);
+    const ClearSilverPrivate *priv = static_cast<ClearSilverPrivate *>(c);
     if (!priv) {
         return nerr_raise(NERR_NOMEM, "Cound not cast ClearSilverPrivate");
     }
@@ -123,7 +123,8 @@ NEOERR* findFile(void *c, HDF *hdf, const char *filename, char **contents)
 
         if (file.exists()) {
             if (!file.open(QFile::ReadOnly)) {
-                return nerr_raise(NERR_IO, "Cound not open file: %s", file.errorString().toLatin1().data());
+                return nerr_raise(
+                    NERR_IO, "Cound not open file: %s", file.errorString().toLatin1().data());
             }
 
             *contents = qstrdup(file.readAll().constData());
@@ -135,7 +136,10 @@ NEOERR* findFile(void *c, HDF *hdf, const char *filename, char **contents)
     return nerr_raise(NERR_NOT_FOUND, "Cound not find file: %s", filename);
 }
 
-bool ClearSilverPrivate::render(Context *c, const QString &filename, const QVariantHash &stash, QByteArray &output) const
+bool ClearSilverPrivate::render(Context *c,
+                                const QString &filename,
+                                const QVariantHash &stash,
+                                QByteArray &output) const
 {
     HDF *hdf = hdfForStash(c, stash);
     CSPARSE *cs;
@@ -147,7 +151,8 @@ bool ClearSilverPrivate::render(Context *c, const QString &filename, const QVari
         string_init(&msg);
         nerr_error_traceback(error, &msg);
         QString errorMsg;
-        errorMsg = QStringLiteral("Failed to init ClearSilver:\n+1").arg(QString::fromLatin1(msg.buf, msg.len));
+        errorMsg = QStringLiteral("Failed to init ClearSilver:\n+1")
+                       .arg(QString::fromLatin1(msg.buf, msg.len));
         renderError(c, errorMsg);
 
         string_clear(&msg);
@@ -156,7 +161,7 @@ bool ClearSilverPrivate::render(Context *c, const QString &filename, const QVari
         return false;
     }
 
-    cs_register_fileload(cs, const_cast<ClearSilverPrivate*>(this), findFile);
+    cs_register_fileload(cs, const_cast<ClearSilverPrivate *>(this), findFile);
 
     error = cs_parse_file(cs, filename.toLatin1().data());
     if (error) {
@@ -164,7 +169,8 @@ bool ClearSilverPrivate::render(Context *c, const QString &filename, const QVari
         string_init(&msg);
         nerr_error_traceback(error, &msg);
         QString errorMsg;
-        errorMsg = QStringLiteral("Failed to parse template file: +1\n+2").arg(filename, QString::fromLatin1(msg.buf, msg.len));
+        errorMsg = QStringLiteral("Failed to parse template file: +1\n+2")
+                       .arg(filename, QString::fromLatin1(msg.buf, msg.len));
         renderError(c, errorMsg);
         nerr_log_error(error);
 
@@ -198,14 +204,16 @@ HDF *ClearSilverPrivate::hdfForStash(Context *c, const QVariantHash &stash) cons
     const QMetaObject *meta = c->metaObject();
     for (int i = 0; i < meta->propertyCount(); ++i) {
         QMetaProperty prop = meta->property(i);
-        QString name = QLatin1String("c.") + QString::fromLatin1(prop.name());
-        QVariant value = prop.read(c);
+        QString name       = QLatin1String("c.") + QString::fromLatin1(prop.name());
+        QVariant value     = prop.read(c);
         serializeVariant(hdf, value, name);
     }
     return hdf;
 }
 
-void ClearSilverPrivate::serializeHash(HDF *hdf, const QVariantHash &hash, const QString &prefix) const
+void ClearSilverPrivate::serializeHash(HDF *hdf,
+                                       const QVariantHash &hash,
+                                       const QString &prefix) const
 {
     QString _prefix;
     if (!prefix.isEmpty()) {
@@ -235,7 +243,7 @@ void ClearSilverPrivate::serializeMap(HDF *hdf, const QVariantMap &map, const QS
 
 void ClearSilverPrivate::serializeVariant(HDF *hdf, const QVariant &value, const QString &key) const
 {
-//    qDebug() << key;
+    //    qDebug() << key;
 
     switch (value.type()) {
     case QVariant::String:

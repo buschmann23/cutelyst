@@ -5,12 +5,12 @@
 #ifndef CUTELYST_DISPATCHER_H
 #define CUTELYST_DISPATCHER_H
 
-#include <QtCore/qobject.h>
-#include <QtCore/qhash.h>
-#include <QtCore/qstringlist.h>
-
 #include <Cutelyst/action.h>
 #include <Cutelyst/cutelyst_global.h>
+
+#include <QtCore/qhash.h>
+#include <QtCore/qobject.h>
+#include <QtCore/qstringlist.h>
 
 namespace Cutelyst {
 
@@ -42,7 +42,7 @@ public:
     /**
      * Returns the named action by its full private path.
      */
-    Action* getActionByPath(const QString &path) const;
+    Action *getActionByPath(const QString &path) const;
 
     /**
      * Returns a list of actions that match \p name on
@@ -66,8 +66,9 @@ public:
     QString uriForAction(Action *action, const QStringList &captures) const;
 
     /**
-     * Expand an action into a full representation of the dispatch. mostly useful for chained where the
-     * returned Action will be of ActionChain type, other actions will just return a single action.
+     * Expand an action into a full representation of the dispatch. mostly useful for chained where
+     * the returned Action will be of ActionChain type, other actions will just return a single
+     * action.
      */
     Action *expandAction(const Context *c, Action *action) const;
 
@@ -81,7 +82,9 @@ protected:
     /**
      * Used by Application to register all Controllers Actions into the list of DispatchType
      */
-    void setupActions(const QVector<Controller *> &controllers, const QVector<DispatchType *> &dispatchers, bool printActions);
+    void setupActions(const QVector<Controller *> &controllers,
+                      const QVector<DispatchType *> &dispatchers,
+                      bool printActions);
 
     /**
      * Delegate the dispatch to the action that matched the url, or return a
@@ -114,6 +117,6 @@ private:
     Q_DECLARE_PRIVATE(Dispatcher)
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CUTELYST_DISPATCHER_H

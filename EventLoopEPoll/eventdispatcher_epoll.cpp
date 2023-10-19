@@ -2,16 +2,18 @@
  * SPDX-FileCopyrightText: (C) 2017 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <QtCore/QSocketNotifier>
-#include <QtCore/QThread>
+#include "eventdispatcher_epoll.h"
+
+#include "eventdispatcher_epoll_p.h"
 
 #include <sys/eventfd.h>
 
-#include "eventdispatcher_epoll.h"
-#include "eventdispatcher_epoll_p.h"
+#include <QtCore/QSocketNotifier>
+#include <QtCore/QThread>
 
-EventDispatcherEPoll::EventDispatcherEPoll(QObject* parent)
-    : QAbstractEventDispatcher(parent), d_ptr(new EventDispatcherEPollPrivate(this))
+EventDispatcherEPoll::EventDispatcherEPoll(QObject *parent)
+    : QAbstractEventDispatcher(parent)
+    , d_ptr(new EventDispatcherEPollPrivate(this))
 {
 }
 
@@ -33,7 +35,7 @@ bool EventDispatcherEPoll::processEvents(QEventLoop::ProcessEventsFlags flags)
     return d->processEvents(flags);
 }
 
-void EventDispatcherEPoll::registerSocketNotifier(QSocketNotifier* notifier)
+void EventDispatcherEPoll::registerSocketNotifier(QSocketNotifier *notifier)
 {
 #ifndef QT_NO_DEBUG
     if (notifier->socket() < 0) {
@@ -51,7 +53,7 @@ void EventDispatcherEPoll::registerSocketNotifier(QSocketNotifier* notifier)
     d->registerSocketNotifier(notifier);
 }
 
-void EventDispatcherEPoll::unregisterSocketNotifier(QSocketNotifier* notifier)
+void EventDispatcherEPoll::unregisterSocketNotifier(QSocketNotifier *notifier)
 {
 #ifndef QT_NO_DEBUG
     if (notifier->socket() < 0) {
@@ -105,7 +107,8 @@ bool EventDispatcherEPoll::unregisterTimers(QObject *object)
     return d->unregisterTimers(object);
 }
 
-QList<QAbstractEventDispatcher::TimerInfo> EventDispatcherEPoll::registeredTimers(QObject *object) const
+QList<QAbstractEventDispatcher::TimerInfo>
+    EventDispatcherEPoll::registeredTimers(QObject *object) const
 {
     if (!object) {
         qWarning("%s: invalid argument", Q_FUNC_INFO);
@@ -155,14 +158,12 @@ bool EventDispatcherEPoll::hasPendingEvents()
     return qGlobalPostedEventsCount() > 0;
 }
 
-void EventDispatcherEPoll::registerTimer(
-        int timerId,
-        int interval,
-        Qt::TimerType timerType,
-        QObject *object
-        )
+void EventDispatcherEPoll::registerTimer(int timerId,
+                                         int interval,
+                                         Qt::TimerType timerType,
+                                         QObject *object)
 {
-#ifndef QT_NO_DEBUG
+#    ifndef QT_NO_DEBUG
     if (timerId < 1 || interval < 0 || !object) {
         qWarning("%s: invalid arguments", Q_FUNC_INFO);
         return;
@@ -172,7 +173,7 @@ void EventDispatcherEPoll::registerTimer(
         qWarning("%s: timers cannot be started from another thread", Q_FUNC_INFO);
         return;
     }
-#endif
+#    endif
 
     Q_D(EventDispatcherEPoll);
     if (interval) {
@@ -186,9 +187,12 @@ void EventDispatcherEPoll::flush()
 {
 }
 #else
-void EventDispatcherEPoll::registerTimer(int timerId, qint64 interval, Qt::TimerType timerType, QObject *object)
+void EventDispatcherEPoll::registerTimer(int timerId,
+                                         qint64 interval,
+                                         Qt::TimerType timerType,
+                                         QObject *object)
 {
-#ifndef QT_NO_DEBUG
+#    ifndef QT_NO_DEBUG
     if (timerId < 1 || interval < 0 || !object) {
         qWarning("%s: invalid arguments", Q_FUNC_INFO);
         return;
@@ -198,7 +202,7 @@ void EventDispatcherEPoll::registerTimer(int timerId, qint64 interval, Qt::Timer
         qWarning("%s: timers cannot be started from another thread", Q_FUNC_INFO);
         return;
     }
-#endif
+#    endif
 
     Q_D(EventDispatcherEPoll);
     if (interval) {

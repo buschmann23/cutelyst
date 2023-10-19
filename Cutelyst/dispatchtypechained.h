@@ -5,8 +5,8 @@
 #ifndef DISPATCHTYPECHAINED_H
 #define DISPATCHTYPECHAINED_H
 
-#include <Cutelyst/cutelyst_global.h>
 #include <Cutelyst/action.h>
+#include <Cutelyst/cutelyst_global.h>
 #include <Cutelyst/dispatchtype.h>
 
 namespace Cutelyst {
@@ -25,7 +25,8 @@ public:
 
     virtual QByteArray list() const override;
 
-    virtual MatchType match(Context *c, const QString &path, const QStringList &args) const override;
+    virtual MatchType
+        match(Context *c, const QString &path, const QStringList &args) const override;
 
     virtual bool registerAction(Action *action) override;
 
@@ -39,6 +40,6 @@ private:
     DispatchTypeChainedPrivate *d_ptr;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // DISPATCHTYPECHAINED_H

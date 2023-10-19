@@ -4,35 +4,32 @@
  */
 #include "cwsgiengine.h"
 
-#include "protocol.h"
-#include "tcpserverbalancer.h"
-#include "tcpserver.h"
-#include "tcpsslserver.h"
-#include "localserver.h"
 #include "config.h"
-#include "server.h"
-#include "staticmap.h"
-#include "socket.h"
-
-#include "protocolwebsocket.h"
+#include "localserver.h"
+#include "protocol.h"
+#include "protocolfastcgi.h"
 #include "protocolhttp.h"
 #include "protocolhttp2.h"
-#include "protocolfastcgi.h"
+#include "protocolwebsocket.h"
+#include "server.h"
+#include "socket.h"
+#include "staticmap.h"
+#include "tcpserver.h"
+#include "tcpserverbalancer.h"
+#include "tcpsslserver.h"
 
 #ifdef Q_OS_UNIX
-#include "unixfork.h"
+#    include "unixfork.h"
 #endif
 
-#include <typeinfo>
-#include <iostream>
-
-#include <Cutelyst/Context>
-#include <Cutelyst/Response>
-#include <Cutelyst/Request>
 #include <Cutelyst/Application>
+#include <Cutelyst/Context>
+#include <Cutelyst/Request>
+#include <Cutelyst/Response>
+#include <iostream>
+#include <typeinfo>
 
 #include <QCoreApplication>
-
 #include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(CWSGI_ENGINE, "cutelyst.server.engine", QtWarningMsg)
@@ -41,7 +38,10 @@ using namespace Cutelyst;
 
 QByteArray dateHeader();
 
-CWsgiEngine::CWsgiEngine(Application *localApp, int workerCore, const QVariantMap &opts, Server *wsgi)
+CWsgiEngine::CWsgiEngine(Application *localApp,
+                         int workerCore,
+                         const QVariantMap &opts,
+                         Server *wsgi)
     : Engine(localApp, workerCore, opts)
     , m_wsgi(wsgi)
 {
@@ -51,24 +51,24 @@ CWsgiEngine::CWsgiEngine(Application *localApp, int workerCore, const QVariantMa
     if (m_wsgi->socketTimeout()) {
         m_socketTimeout = new QTimer(this);
         m_socketTimeout->setObjectName(QStringLiteral("Cutelyst::socketTimeout"));
-        m_socketTimeout->setInterval(m_wsgi->socketTimeout() * 1000);
+        m_socketTimeout->setInterval(std::chrono::seconds{m_wsgi->socketTimeout()});
     }
 
-    connect(this, &CWsgiEngine::shutdown, app(), [this] {
-        Q_EMIT app()->shuttingDown(app());
-    });
+    connect(this, &CWsgiEngine::shutdown, app(), [this] { Q_EMIT app()->shuttingDown(app()); });
 
-    const QStringList staticMap = m_wsgi->staticMap();
+    const QStringList staticMap  = m_wsgi->staticMap();
     const QStringList staticMap2 = m_wsgi->staticMap2();
     if (!staticMap.isEmpty() || !staticMap2.isEmpty()) {
         auto staticMapPlugin = new StaticMap(app());
 
         for (const QString &part : staticMap) {
-            staticMapPlugin->addStaticMap(part.section(QLatin1Char('='), 0, 0), part.section(QLatin1Char('='), 1, 1), false);
+            staticMapPlugin->addStaticMap(
+                part.section(QLatin1Char('='), 0, 0), part.section(QLatin1Char('='), 1, 1), false);
         }
 
         for (const QString &part : staticMap2) {
-            staticMapPlugin->addStaticMap(part.section(QLatin1Char('='), 0, 0), part.section(QLatin1Char('='), 1, 1), true);
+            staticMapPlugin->addStaticMap(
+                part.section(QLatin1Char('='), 0, 0), part.section(QLatin1Char('='), 1, 1), true);
         }
     }
 }
@@ -94,7 +94,8 @@ void CWsgiEngine::setServers(const std::vector<QObject *> &servers)
             if (server) {
                 ++m_runningServers;
                 if (m_socketTimeout) {
-                    connect(m_socketTimeout, &QTimer::timeout, server, &TcpServer::timeoutConnections);
+                    connect(
+                        m_socketTimeout, &QTimer::timeout, server, &TcpServer::timeoutConnections);
                 }
 
                 if (server->protocol()->type() == Protocol::Type::Http11) {
@@ -122,7 +123,10 @@ void CWsgiEngine::setServers(const std::vector<QObject *> &servers)
             if (server) {
                 ++m_runningServers;
                 if (m_socketTimeout) {
-                    connect(m_socketTimeout, &QTimer::timeout, server, &LocalServer::timeoutConnections);
+                    connect(m_socketTimeout,
+                            &QTimer::timeout,
+                            server,
+                            &LocalServer::timeoutConnections);
                 }
 
                 if (server->protocol()->type() == Protocol::Type::Http11) {
@@ -148,7 +152,8 @@ void CWsgiEngine::postFork(int workerId)
     if (Q_LIKELY(postForkApplication())) {
         Q_EMIT started();
     } else {
-        std::cerr << "Application failed to post fork, cheaping worker: " << workerId << ", core: " << workerCore() << std::endl;
+        std::cerr << "Application failed to post fork, cheaping worker: " << workerId
+                  << ", core: " << workerCore() << std::endl;
         Q_EMIT shutdown();
     }
 }
@@ -156,8 +161,9 @@ void CWsgiEngine::postFork(int workerId)
 QByteArray CWsgiEngine::dateHeader()
 {
     QString ret;
-    ret = QLatin1String("\r\nDate: ") + QLocale::c().toString(QDateTime::currentDateTimeUtc(),
-                                                              QStringLiteral("ddd, dd MMM yyyy hh:mm:ss 'GMT"));
+    ret = QLatin1String("\r\nDate: ") +
+          QLocale::c().toString(QDateTime::currentDateTimeUtc(),
+                                QStringLiteral("ddd, dd MMM yyyy hh:mm:ss 'GMT"));
     return ret.toLatin1();
 }
 
@@ -203,7 +209,7 @@ void CWsgiEngine::handleSocketShutdown(Socket *socket)
     if (socket->processing == 0) {
         socket->connectionClose();
     } else if (socket->proto->type() == Protocol::Type::Http11Websocket) {
-        auto req = static_cast<ProtoRequestHttp*>(socket->protoData);
+        auto req = static_cast<ProtoRequestHttp *>(socket->protoData);
         req->webSocketClose(Response::CloseCode::CloseCodeGoingAway, {});
     } else {
         socket->protoData->headerConnection = ProtocolData::HeaderConnectionClose;

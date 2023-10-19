@@ -5,7 +5,6 @@
 #include "headers.h"
 
 #include "common.h"
-
 #include "engine.h"
 
 #include <QStringList>
@@ -16,7 +15,8 @@ inline QString normalizeHeaderKey(const QString &field);
 inline QByteArray decodeBasicAuth(const QString &auth);
 inline Headers::Authorization decodeBasicAuthPair(const QString &auth);
 
-Headers::Headers(const Headers &other) : m_data(other.m_data)
+Headers::Headers(const Headers &other)
+    : m_data(other.m_data)
 {
 }
 
@@ -40,7 +40,8 @@ void Headers::setContentDispositionAttachment(const QString &filename)
     if (filename.isEmpty()) {
         setContentDisposition(QStringLiteral("attachment"));
     } else {
-        setContentDisposition(QLatin1String("attachment; filename=\"") + filename + QLatin1Char('"'));
+        setContentDisposition(QLatin1String("attachment; filename=\"") + filename +
+                              QLatin1Char('"'));
     }
 }
 
@@ -60,7 +61,7 @@ QString Headers::contentType() const
     const auto it = m_data.constFind(QStringLiteral("CONTENT_TYPE"));
     if (it != m_data.constEnd()) {
         const QString &ct = it.value();
-        ret = ct.mid(0, ct.indexOf(QLatin1Char(';'))).toLower();
+        ret               = ct.mid(0, ct.indexOf(QLatin1Char(';'))).toLower();
     }
     return ret;
 }
@@ -76,10 +77,10 @@ QString Headers::contentTypeCharset() const
     const auto it = m_data.constFind(QStringLiteral("CONTENT_TYPE"));
     if (it != m_data.constEnd()) {
         const QString &contentType = it.value();
-        int pos = contentType.indexOf(u"charset=", 0, Qt::CaseInsensitive);
+        int pos                    = contentType.indexOf(u"charset=", 0, Qt::CaseInsensitive);
         if (pos != -1) {
             int endPos = contentType.indexOf(u';', pos);
-            ret = contentType.mid(pos + 8, endPos).trimmed().toUpper();
+            ret        = contentType.mid(pos + 8, endPos).trimmed().toUpper();
         }
     }
 
@@ -95,7 +96,7 @@ void Headers::setContentTypeCharset(const QString &charset)
     }
 
     QString contentType = it.value();
-    int pos = contentType.indexOf(QLatin1String("charset="), 0, Qt::CaseInsensitive);
+    int pos             = contentType.indexOf(QLatin1String("charset="), 0, Qt::CaseInsensitive);
     if (pos != -1) {
         int endPos = contentType.indexOf(QLatin1Char(';'), pos);
         if (endPos == -1) {
@@ -127,24 +128,22 @@ bool Headers::contentIsText() const
 bool Headers::contentIsHtml() const
 {
     const QString ct = contentType();
-    return ct.compare(u"text/html") == 0 ||
-            ct.compare(u"application/xhtml+xml") == 0 ||
-            ct.compare(u"application/vnd.wap.xhtml+xml") == 0;
+    return ct.compare(u"text/html") == 0 || ct.compare(u"application/xhtml+xml") == 0 ||
+           ct.compare(u"application/vnd.wap.xhtml+xml") == 0;
 }
 
 bool Headers::contentIsXHtml() const
 {
     const QString ct = contentType();
-    return ct.compare(u"application/xhtml+xml") == 0||
-            ct.compare(u"application/vnd.wap.xhtml+xml") == 0;
+    return ct.compare(u"application/xhtml+xml") == 0 ||
+           ct.compare(u"application/vnd.wap.xhtml+xml") == 0;
 }
 
 bool Headers::contentIsXml() const
 {
     const QString ct = contentType();
-    return ct.compare(u"text/xml") == 0 ||
-            ct.compare(u"application/xml") == 0||
-            ct.endsWith(u"xml");
+    return ct.compare(u"text/xml") == 0 || ct.compare(u"application/xml") == 0 ||
+           ct.endsWith(u"xml");
 }
 
 bool Headers::contentIsJson() const
@@ -174,8 +173,7 @@ QString Headers::setDateWithDateTime(const QDateTime &date)
 {
     // ALL dates must be in GMT timezone http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
     // and follow RFC 822
-    QString dt = QLocale::c().toString(date.toUTC(),
-                                       u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
+    QString dt = QLocale::c().toString(date.toUTC(), u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
     m_data.replace(QStringLiteral("DATE"), dt);
     return dt;
 }
@@ -191,8 +189,7 @@ QDateTime Headers::date() const
             ret = QLocale::c().toDateTime(date.left(date.size() - 4),
                                           QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
         } else {
-            ret = QLocale::c().toDateTime(date,
-                                          QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
+            ret = QLocale::c().toDateTime(date, QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
         }
         ret.setTimeSpec(Qt::UTC);
     }
@@ -216,8 +213,8 @@ QDateTime Headers::ifModifiedSinceDateTime() const
             ret = QLocale::c().toDateTime(ifModifiedStr.left(ifModifiedStr.size() - 4),
                                           QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
         } else {
-            ret = QLocale::c().toDateTime(ifModifiedStr,
-                                          QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
+            ret =
+                QLocale::c().toDateTime(ifModifiedStr, QStringLiteral("ddd, dd MMM yyyy hh:mm:ss"));
         }
         ret.setTimeSpec(Qt::UTC);
     }
@@ -229,8 +226,8 @@ bool Headers::ifModifiedSince(const QDateTime &lastModified) const
 {
     auto it = m_data.constFind(QStringLiteral("IF_MODIFIED_SINCE"));
     if (it != m_data.constEnd()) {
-        return it.value() != QLocale::c().toString(lastModified.toUTC(),
-                                                   u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
+        return it.value() !=
+               QLocale::c().toString(lastModified.toUTC(), u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
     }
     return true;
 }
@@ -241,7 +238,7 @@ bool Headers::ifMatch(const QString &etag) const
     if (it != m_data.constEnd()) {
         const auto clientETag = QStringView(it.value());
         return clientETag.mid(1, clientETag.size() - 2) == etag ||
-                clientETag.mid(3, clientETag.size() - 4) == etag; // Weak ETag
+               clientETag.mid(3, clientETag.size() - 4) == etag; // Weak ETag
     }
     return true;
 }
@@ -252,7 +249,7 @@ bool Headers::ifNoneMatch(const QString &etag) const
     if (it != m_data.constEnd()) {
         const auto clientETag = QStringView(it.value());
         return clientETag.mid(1, clientETag.size() - 2) == etag ||
-                clientETag.mid(3, clientETag.size() - 4) == etag; // Weak ETag
+               clientETag.mid(3, clientETag.size() - 4) == etag; // Weak ETag
     }
     return false;
 }
@@ -276,8 +273,7 @@ QString Headers::setLastModified(const QDateTime &lastModified)
 {
     // ALL dates must be in GMT timezone http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
     // and follow RFC 822
-    auto dt = QLocale::c().toString(lastModified.toUTC(),
-                                    u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
+    auto dt = QLocale::c().toString(lastModified.toUTC(), u"ddd, dd MMM yyyy hh:mm:ss 'GMT");
     setLastModified(dt);
     return dt;
 }
@@ -422,7 +418,7 @@ void Headers::removeHeader(const QString &field)
     m_data.remove(normalizeHeaderKey(field));
 }
 
-bool Headers::contains(const QString &field)
+bool Headers::contains(const QString &field) const
 {
     return m_data.contains(normalizeHeaderKey(field));
 }
@@ -435,7 +431,7 @@ QString Headers::operator[](const QString &key) const
 QString normalizeHeaderKey(const QString &field)
 {
     QString key = field;
-    int i = 0;
+    int i       = 0;
     while (i < key.size()) {
         QChar c = key[i];
         if (c.isLetter()) {
@@ -471,7 +467,7 @@ Headers::Authorization decodeBasicAuthPair(const QString &auth)
         if (pos == -1) {
             ret.user = QString::fromLatin1(authorization);
         } else {
-            ret.user = QString::fromLatin1(authorization.left(pos));
+            ret.user     = QString::fromLatin1(authorization.left(pos));
             ret.password = QString::fromLatin1(authorization.mid(pos + 1));
         }
     }
@@ -481,10 +477,9 @@ Headers::Authorization decodeBasicAuthPair(const QString &auth)
 QDebug operator<<(QDebug debug, const Headers &headers)
 {
     const QMultiHash<QString, QString> data = headers.data();
-    const bool oldSetting = debug.autoInsertSpaces();
+    const bool oldSetting                   = debug.autoInsertSpaces();
     debug.nospace() << "Headers[";
-    for (auto it = data.constBegin();
-         it != data.constEnd(); ++it) {
+    for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
         debug << '(' << Engine::camelCaseHeader(it.key()) + QLatin1Char('=') + it.value() << ')';
     }
     debug << ']';

@@ -7,9 +7,9 @@
 
 #include "staticcompressed.h"
 
+#include <QDir>
 #include <QRegularExpression>
 #include <QVector>
-#include <QDir>
 
 namespace Cutelyst {
 
@@ -18,17 +18,16 @@ class Context;
 class StaticCompressedPrivate
 {
 public:
-    enum Compression {
-        Gzip,
-        Zopfli,
-        Brotli,
-        Deflate
-    };
+    enum Compression { Gzip, Zopfli, Brotli, Deflate };
 
     void beforePrepareAction(Context *c, bool *skipMethod);
     bool locateCompressedFile(Context *c, const QString &relPath) const;
-    QString locateCacheFile(const QString &origPath, const QDateTime &origLastModified, Compression compression) const;
-    bool compressGzip(const QString &inputPath, const QString &outputPath, const QDateTime &origLastModified) const;
+    QString locateCacheFile(const QString &origPath,
+                            const QDateTime &origLastModified,
+                            Compression compression) const;
+    bool compressGzip(const QString &inputPath,
+                      const QString &outputPath,
+                      const QDateTime &origLastModified) const;
     bool compressDeflate(const QString &inputPath, const QString &outputPath) const;
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_ZOPFLI
     bool compressZopfli(const QString &inputPath, const QString &outputPath) const;
@@ -44,13 +43,13 @@ public:
     QRegularExpression re = QRegularExpression(QStringLiteral("\\.[^/]+$"));
     QDir cacheDir;
     int zlibCompressionLevel = 9;
-    int zopfliIterations = 15;
-    int brotliQualityLevel = 11;
-    bool useZopfli = false;
-    bool checkPreCompressed = true;
+    int zopfliIterations     = 15;
+    int brotliQualityLevel   = 11;
+    bool useZopfli           = false;
+    bool checkPreCompressed  = true;
     bool onTheFlyCompression = true;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // STATICCOMPRESSED_P_H

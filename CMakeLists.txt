@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(cutelyst
-    VERSION 3.7.0
+    VERSION 3.8.0
     DESCRIPTION "A C++ Web Framework built on top of Qt, using the simple approach of Catalyst (Perl) framework."
     HOMEPAGE_URL "https://cutelyst.org/"
     LANGUAGES CXX)
@@ -105,15 +105,33 @@ add_definitions("-DLOCALSTATEDIR=\"${LOCALSTATEDIR}\"")
 
 configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-#
-# Custom C flags
-#
-if (ENABLE_MAINTAINER_CFLAGS)
-    set (MAINTAINER_CFLAGS "-Werror -Wall -Wcast-align -Wno-uninitialized -Wempty-body -Wformat-security -Wformat -Winit-self")
-    add_definitions(${MAINTAINER_CFLAGS}
-        -DQT_DEPRECATED_WARNINGS
-    )
-endif ()
+macro(set_compiler_flags targetName)
+  if(ENABLE_MAINTAINER_CFLAGS)
+    target_compile_definitions(${targetName} PRIVATE QT_DEPRECATED_WARNINGS)
+
+    if(NOT MSVC)
+      target_compile_options(${targetName} PRIVATE
+        -Wall
+        -Wextra
+        -Wcast-align
+        -Wno-uninitialized
+        -Wempty-body
+        -Wformat-security
+        -Wformat
+        -Winit-self
+      )
+    endif()
+
+    if(APPLE)
+      target_compile_options(${targetName} PRIVATE -Wweak-vtables)
+    endif()
+  endif()
+
+  # Enable -Werror
+  if(NOT MSVC OR IS_CLANG_BUILD) # clang-cl accepts these too
+    target_compile_options(${targetName} PRIVATE -Werror -Wundef -Wno-error=deprecated-declarations)
+  endif()
+endmacro()
 
 add_definitions(
     -DQT_NO_KEYWORDS

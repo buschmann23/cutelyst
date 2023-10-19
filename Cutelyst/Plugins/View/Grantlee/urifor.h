@@ -7,10 +7,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#include <grantlee/filter.h>
-#include <grantlee/safestring.h>
-#include <grantlee/util.h>
-#include <grantlee/node.h>
+#    include <grantlee/filter.h>
+#    include <grantlee/node.h>
+#    include <grantlee/safestring.h>
+#    include <grantlee/util.h>
 
 class UriForTag final : public Grantlee::AbstractNodeFactory
 {
@@ -21,7 +21,9 @@ class UriFor final : public Grantlee::Node
 {
     Q_OBJECT
 public:
-    explicit UriFor(const QString &path, const QStringList &args, Grantlee::Parser *parser = nullptr);
+    explicit UriFor(const QString &path,
+                    const QStringList &args,
+                    Grantlee::Parser *parser = nullptr);
 
     void render(Grantlee::OutputStream *stream, Grantlee::Context *gc) const override;
 

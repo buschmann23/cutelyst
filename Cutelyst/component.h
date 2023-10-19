@@ -5,9 +5,9 @@
 #ifndef CUTELYST_COMPONENT_H
 #define CUTELYST_COMPONENT_H
 
-#include <QtCore/qobject.h>
-
 #include <Cutelyst/cutelyst_global.h>
+
+#include <QtCore/qobject.h>
 
 namespace Cutelyst {
 
@@ -87,7 +87,8 @@ public:
 
 protected:
     /*!
-     * A derived class using pimpl should call this constructor, to reduce the number of memory allocations
+     * A derived class using pimpl should call this constructor, to reduce the number of memory
+     * allocations
      */
     explicit Component(ComponentPrivate *d, QObject *parent = nullptr);
 
@@ -127,9 +128,10 @@ protected:
 
 protected:
     friend class Controller;
-    ComponentPrivate *d_ptr; //!< we cannot inherit from QObjectPrivate and therefore need our own d_ptr
+    ComponentPrivate
+        *d_ptr; //!< we cannot inherit from QObjectPrivate and therefore need our own d_ptr
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CUTELYST_COMPONENT_H

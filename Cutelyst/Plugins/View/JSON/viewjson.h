@@ -24,7 +24,7 @@ public:
     /**  This value defines the format of the JSON byte array produced when rendering the view */
     enum JsonFormat {
         Indented, /**< The output will be indented */
-        Compact /**< The output will be compact saving space */
+        Compact   /**< The output will be compact saving space */
     };
     Q_ENUM(JsonFormat)
 
@@ -40,12 +40,7 @@ public:
     void setOutputFormat(JsonFormat format);
 
     /**  This value defines which kind of exposition was defined */
-    enum ExposeMode {
-        All,
-        String,
-        StringList,
-        RegularExpression
-    };
+    enum ExposeMode { All, String, StringList, RegularExpression };
     Q_ENUM(ExposeMode)
 
     /**
@@ -73,8 +68,9 @@ public:
     void setExposeStash(const QRegularExpression &re);
 
     /**
-     * By default this plugin does \b NOT sets X-JSON header if the requested client is a Prototype.js with X-JSON support.
-     * By setting true, you can opt-out this behavior so that you do not need to do eval() by your own.
+     * By default this plugin does \b NOT sets X-JSON header if the requested client is a
+     * Prototype.js with X-JSON support. By setting true, you can opt-out this behavior so that you
+     * do not need to do eval() by your own.
      */
     void setXJsonHeader(bool enable);
 
@@ -86,6 +82,6 @@ public:
     QByteArray render(Context *c) const final;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // VIEWJSON_H

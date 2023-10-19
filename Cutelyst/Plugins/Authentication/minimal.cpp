@@ -8,22 +8,20 @@
 
 using namespace Cutelyst;
 
-StoreMinimal::StoreMinimal(const QString &idField, QObject *parent) : AuthenticationStore(parent)
-  , m_idField(idField)
+StoreMinimal::StoreMinimal(const QString &idField, QObject *parent)
+    : AuthenticationStore(parent)
+    , m_idField(idField)
 {
-
 }
 
 StoreMinimal::~StoreMinimal()
 {
-
 }
 
 void StoreMinimal::addUser(const AuthenticationUser &user)
 {
     m_users << user;
 }
-
 
 AuthenticationUser StoreMinimal::findUser(Context *c, const ParamsMultiMap &userInfo)
 {
@@ -50,8 +48,9 @@ QVariant StoreMinimal::forSession(Context *c, const AuthenticationUser &user)
 
 AuthenticationUser StoreMinimal::fromSession(Context *c, const QVariant &frozenUser)
 {
-    return findUser(c, {
-                        {m_idField, frozenUser.toString()}
+    return findUser(c,
+                    {
+                        {m_idField, frozenUser.toString()},
                     });
 }
 

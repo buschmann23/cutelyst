@@ -2,41 +2,40 @@
  * SPDX-FileCopyrightText: (C) 2013-2022 Daniel Nicoletti <dantti12@gmail.com>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "context_p.h"
-
+#include "action.h"
+#include "application.h"
 #include "common.h"
+#include "config.h"
+#include "context_p.h"
+#include "controller.h"
+#include "dispatcher.h"
+#include "enginerequest.h"
 #include "request.h"
 #include "response.h"
-#include "action.h"
-#include "dispatcher.h"
-#include "controller.h"
-#include "application.h"
 #include "stats.h"
-#include "enginerequest.h"
 
-#include "config.h"
-
+#include <QBuffer>
+#include <QCoreApplication>
 #include <QUrl>
 #include <QUrlQuery>
-#include <QCoreApplication>
-#include <QBuffer>
 
 using namespace Cutelyst;
 
-Context::Context(ContextPrivate *priv) : d_ptr(priv)
+Context::Context(ContextPrivate *priv)
+    : d_ptr(priv)
 {
 }
 
-Context::Context(Application *app) :
-    d_ptr(new ContextPrivate(app, app->engine(), app->dispatcher(), app->plugins()))
+Context::Context(Application *app)
+    : d_ptr(new ContextPrivate(app, app->engine(), app->dispatcher(), app->plugins()))
 {
-    auto req = new DummyRequest(this);
+    auto req  = new DummyRequest(this);
     req->body = new QBuffer(this);
     req->body->open(QBuffer::ReadWrite);
     req->context = this;
 
-    d_ptr->response = new Response(app->defaultHeaders(), req);
-    d_ptr->request = new Request(req);
+    d_ptr->response               = new Response(app->defaultHeaders(), req);
+    d_ptr->request                = new Request(req);
     d_ptr->request->d_ptr->engine = d_ptr->engine;
 }
 
@@ -233,7 +232,9 @@ QStack<Component *> Context::stack() const noexcept
     return d->stack;
 }
 
-QUrl Context::uriFor(const QString &path, const QStringList &args, const ParamsMultiMap &queryValues) const
+QUrl Context::uriFor(const QString &path,
+                     const QStringList &args,
+                     const ParamsMultiMap &queryValues) const
 {
     Q_D(const Context);
 
@@ -279,7 +280,10 @@ QUrl Context::uriFor(const QString &path, const QStringList &args, const ParamsM
     return uri;
 }
 
-QUrl Context::uriFor(Action *action, const QStringList &captures, const QStringList &args, const ParamsMultiMap &queryValues) const
+QUrl Context::uriFor(Action *action,
+                     const QStringList &captures,
+                     const QStringList &args,
+                     const ParamsMultiMap &queryValues) const
 {
     Q_D(const Context);
 
@@ -289,19 +293,18 @@ QUrl Context::uriFor(Action *action, const QStringList &captures, const QStringL
         localAction = d->action;
     }
 
-    QStringList localArgs = args;
+    QStringList localArgs     = args;
     QStringList localCaptures = captures;
 
     Action *expandedAction = d->dispatcher->expandAction(this, action);
     if (expandedAction->numberOfCaptures() > 0) {
-        while (localCaptures.size() < expandedAction->numberOfCaptures()
-               && localArgs.size()) {
+        while (localCaptures.size() < expandedAction->numberOfCaptures() && localArgs.size()) {
             localCaptures.append(localArgs.takeFirst());
         }
     } else {
         QStringList localCapturesAux = localCaptures;
         localCapturesAux.append(localArgs);
-        localArgs = localCapturesAux;
+        localArgs     = localCapturesAux;
         localCaptures = QStringList();
     }
 
@@ -315,7 +318,10 @@ QUrl Context::uriFor(Action *action, const QStringList &captures, const QStringL
     return uri;
 }
 
-QUrl Context::uriForAction(const QString &path, const QStringList &captures, const QStringList &args, const ParamsMultiMap &queryValues) const
+QUrl Context::uriForAction(const QString &path,
+                           const QStringList &captures,
+                           const QStringList &args,
+                           const ParamsMultiMap &queryValues) const
 {
     Q_D(const Context);
 
@@ -367,7 +373,7 @@ void Context::attachAsync()
     if (d->engineRequest->status & EngineRequest::Async) {
         while (d->asyncAction < d->pendingAsync.size()) {
             Component *action = d->pendingAsync[d->asyncAction++];
-            const bool ret = execute(action);
+            const bool ret    = execute(action);
 
             if (d->actionRefCount) {
                 return;
@@ -419,10 +425,11 @@ bool Context::execute(Component *code)
     Q_D(Context);
     Q_ASSERT_X(code, "Context::execute", "trying to execute a null Cutelyst::Component");
 
-    static int recursion = qEnvironmentVariableIsSet("RECURSION") ? qEnvironmentVariableIntValue("RECURSION") : 1000;
+    static int recursion =
+        qEnvironmentVariableIsSet("RECURSION") ? qEnvironmentVariableIntValue("RECURSION") : 1000;
     if (d->stack.size() >= recursion) {
         QString msg = QStringLiteral("Deep recursion detected (stack size %1) calling %2, %3")
-                .arg(QString::number(d->stack.size()), code->reverse(), code->name());
+                          .arg(QString::number(d->stack.size()), code->reverse(), code->name());
         error(msg);
         setState(false);
         return false;
@@ -474,7 +481,10 @@ QVariantMap Context::config() const noexcept
     return d->app->config();
 }
 
-QString Context::translate(const char *context, const char *sourceText, const char *disambiguation, int n) const
+QString Context::translate(const char *context,
+                           const char *sourceText,
+                           const char *disambiguation,
+                           int n) const
 {
     Q_D(const Context);
     return d->app->translate(d->locale, context, sourceText, disambiguation, n);
@@ -490,10 +500,13 @@ void Context::finalize()
     }
 
     if (d->stats) {
-        qCDebug(CUTELYST_STATS, "Response Code: %d; Content-Type: %s; Content-Length: %s",
+        qCDebug(CUTELYST_STATS,
+                "Response Code: %d; Content-Type: %s; Content-Length: %s",
                 d->response->status(),
-                qPrintable(d->response->headers().header(QStringLiteral("CONTENT_TYPE"), QStringLiteral("unknown"))),
-                qPrintable(d->response->headers().header(QStringLiteral("CONTENT_LENGTH"), QStringLiteral("unknown"))));
+                qPrintable(d->response->headers().header(QStringLiteral("CONTENT_TYPE"),
+                                                         QStringLiteral("unknown"))),
+                qPrintable(d->response->headers().header(QStringLiteral("CONTENT_LENGTH"),
+                                                         QStringLiteral("unknown"))));
 
         const double enlapsed = d->engineRequest->elapsed.nsecsElapsed() / 1000000000.0;
         QString average;
@@ -504,9 +517,9 @@ void Context::finalize()
             average.truncate(average.size() - 3);
         }
         qCInfo(CUTELYST_STATS) << qPrintable(QStringLiteral("Request took: %1s (%2/s)\n%3")
-                                             .arg(QString::number(enlapsed, 'f'),
-                                                  average,
-                                                  QString::fromLatin1(d->stats->report())));
+                                                 .arg(QString::number(enlapsed, 'f'),
+                                                      average,
+                                                      QString::fromLatin1(d->stats->report())));
         delete d->stats;
         d->stats = nullptr;
     }
@@ -530,7 +543,8 @@ QString ContextPrivate::statsStartExecute(Component *code)
 
     if (stack.size() > 2) {
         actionName = u"-> " + actionName;
-        actionName = actionName.rightJustified(actionName.size() + stack.size() - 2, QLatin1Char(' '));
+        actionName =
+            actionName.rightJustified(actionName.size() + stack.size() - 2, QLatin1Char(' '));
     }
 
     stats->profileStart(actionName);

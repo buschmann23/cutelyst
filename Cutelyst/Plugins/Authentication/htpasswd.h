@@ -5,8 +5,8 @@
 #ifndef AUTHENTICATION_STORE_HTPASSWD_H
 #define AUTHENTICATION_STORE_HTPASSWD_H
 
-#include <Cutelyst/cutelyst_global.h>
 #include <Cutelyst/Plugins/Authentication/authenticationstore.h>
+#include <Cutelyst/cutelyst_global.h>
 
 namespace Cutelyst {
 
@@ -15,7 +15,8 @@ class CUTELYST_PLUGIN_AUTHENTICATION_EXPORT StoreHtpasswd : public Authenticatio
     Q_OBJECT
 public:
     /**
-     * Constructs a new htpasswd store object with the given parent to represent the file with the specified name.
+     * Constructs a new htpasswd store object with the given parent to represent the file with the
+     * specified name.
      */
     explicit StoreHtpasswd(const QString &name, QObject *parent = nullptr);
     virtual ~StoreHtpasswd() override;
@@ -44,6 +45,6 @@ private:
     QString m_filename;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // AUTHENTICATION_STORE_HTPASSWD_H

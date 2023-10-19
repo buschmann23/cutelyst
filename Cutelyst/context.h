@@ -5,15 +5,15 @@
 #ifndef CUTELYST_CONTEXT_H
 #define CUTELYST_CONTEXT_H
 
-#include <QtCore/QObject>
-#include <QtCore/QVariant>
-#include <QtCore/QUrl>
-#include <QtCore/QStringList>
-#include <QtCore/QStack>
-
 #include <Cutelyst/async.h>
-#include <Cutelyst/request.h>
 #include <Cutelyst/cutelyst_global.h>
+#include <Cutelyst/request.h>
+
+#include <QtCore/QObject>
+#include <QtCore/QStack>
+#include <QtCore/QStringList>
+#include <QtCore/QUrl>
+#include <QtCore/QVariant>
 
 namespace Cutelyst {
 
@@ -38,7 +38,7 @@ class ContextPrivate;
 class CUTELYST_LIBRARY Context : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(Action* action READ action CONSTANT)
+    Q_PROPERTY(Action *action READ action CONSTANT)
     Q_PROPERTY(QString actionName READ actionName CONSTANT)
     Q_PROPERTY(QString ns READ ns CONSTANT)
     Q_PROPERTY(QString namespace READ ns CONSTANT)
@@ -232,8 +232,8 @@ public:
 
     /**
      * Removes the item with the key from the stash and returns the value associated with it.
-     * If the item does not exist in the stash, the function simply returns a default-constructed value.
-     * If you don't use the return value, stashRemove() is more efficient.
+     * If the item does not exist in the stash, the function simply returns a default-constructed
+     * value. If you don't use the return value, stashRemove() is more efficient.
      */
     QVariant stashTake(const QString &key);
 
@@ -269,8 +269,8 @@ public:
      * c->request()->base() any \p args are appended as additional path
      * components; and any queryValues> are appended as "?foo=bar" parameters.
      */
-    QUrl uriFor(const QString &path = QString(),
-                const QStringList &args = QStringList(),
+    QUrl uriFor(const QString &path               = QString(),
+                const QStringList &args           = QStringList(),
                 const ParamsMultiMap &queryValues = ParamsMultiMap()) const;
 
     /**
@@ -283,8 +283,7 @@ public:
      * relative to the application root (if it does). It is then merged with
      * c->request()->base() and any queryValues> are appended as "?foo=bar" parameters.
      */
-    inline QUrl uriFor(const QString &path,
-                       const ParamsMultiMap &queryValues) const;
+    inline QUrl uriFor(const QString &path, const ParamsMultiMap &queryValues) const;
 
     /**
      * Constructs an absolute QUrl object based on the application root, the
@@ -296,8 +295,8 @@ public:
      * c->uriFor(c->action(), args).
      */
     QUrl uriFor(Action *action,
-                const QStringList &captures = QStringList(),
-                const QStringList &args = QStringList(),
+                const QStringList &captures       = QStringList(),
+                const QStringList &args           = QStringList(),
                 const ParamsMultiMap &queryValues = ParamsMultiMap()) const;
 
     /**
@@ -305,8 +304,7 @@ public:
      * provided path, and the additional arguments and query parameters provided.
      * When used as a string, provides a textual URI.
      */
-    inline QUrl uriFor(Action *action,
-                       const ParamsMultiMap &queryValues) const;
+    inline QUrl uriFor(Action *action, const ParamsMultiMap &queryValues) const;
 
     /**
      * A private path to the Cutelyst action you want to create a URI for.
@@ -332,15 +330,14 @@ public:
      * and it will create the URI /users/the-list.
      */
     QUrl uriForAction(const QString &path,
-                      const QStringList &captures = QStringList(),
-                      const QStringList &args = QStringList(),
+                      const QStringList &captures       = QStringList(),
+                      const QStringList &args           = QStringList(),
                       const ParamsMultiMap &queryValues = ParamsMultiMap()) const;
 
     /**
      * A convenience method for the uriForAction() without the arguments parameter
      */
-    inline QUrl uriForAction(const QString &path,
-                             const ParamsMultiMap &queryValues) const;
+    inline QUrl uriForAction(const QString &path, const ParamsMultiMap &queryValues) const;
 
     /**
      * Returns true if the last executed Action requested
@@ -495,8 +492,8 @@ public:
     /**
      * Translates the \a sourceText for the given \a context into the language defined by locale().
      *
-     * See Application::addTranslator() for information about installation of translators. Internally
-     * this function will use QTranslator::translate().
+     * See Application::addTranslator() for information about installation of translators.
+     * Internally this function will use QTranslator::translate().
      *
      * \code{.cpp}
      * void MyController::index(Context *c)
@@ -505,7 +502,10 @@ public:
      * }
      * \endcode
      */
-    QString translate(const char *context, const char *sourceText, const char *disambiguation = nullptr, int n = -1) const;
+    QString translate(const char *context,
+                      const char *sourceText,
+                      const char *disambiguation = nullptr,
+                      int n                      = -1) const;
 
 public Q_SLOTS:
     /*!
@@ -535,15 +535,21 @@ private:
 };
 
 inline QUrl Context::uriFor(const QString &path, const ParamsMultiMap &queryValues) const
-{ return uriFor(path, QStringList(), queryValues); }
+{
+    return uriFor(path, QStringList(), queryValues);
+}
 
 inline QUrl Context::uriFor(Action *action, const ParamsMultiMap &queryValues) const
-{ return uriFor(action, QStringList(), QStringList(), queryValues); }
+{
+    return uriFor(action, QStringList(), QStringList(), queryValues);
+}
 
 inline QUrl Context::uriForAction(const QString &path, const ParamsMultiMap &queryValues) const
-{ return uriForAction(path, QStringList(), QStringList(), queryValues); }
-
+{
+    return uriForAction(path, QStringList(), QStringList(), queryValues);
 }
+
+} // namespace Cutelyst
 
 Q_DECLARE_METATYPE(Cutelyst::Context *)
 

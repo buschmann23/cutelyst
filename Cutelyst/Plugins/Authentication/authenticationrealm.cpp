@@ -5,8 +5,8 @@
 #include "authenticationrealm.h"
 
 #include "authenticationstore.h"
-#include "context.h"
 #include "common.h"
+#include "context.h"
 
 #include <Cutelyst/Plugins/Session/session.h>
 
@@ -17,7 +17,10 @@ Q_LOGGING_CATEGORY(C_AUTH_REALM, "cutelyst.plugin.authentication.realm", QtWarni
 #define SESSION_AUTHENTICATION_USER "__authentication_user"
 #define SESSION_AUTHENTICATION_USER_REALM "__authentication_user_realm" // in authentication.cpp
 
-AuthenticationRealm::AuthenticationRealm(AuthenticationStore *store, AuthenticationCredential *credential, const QString &name, QObject *parent)
+AuthenticationRealm::AuthenticationRealm(AuthenticationStore *store,
+                                         AuthenticationCredential *credential,
+                                         const QString &name,
+                                         QObject *parent)
     : Component(parent)
     , m_store(store)
     , m_credential(credential)
@@ -30,7 +33,6 @@ AuthenticationRealm::AuthenticationRealm(AuthenticationStore *store, Authenticat
 
 AuthenticationRealm::~AuthenticationRealm()
 {
-
 }
 
 AuthenticationStore *AuthenticationRealm::store() const
@@ -71,17 +73,15 @@ AuthenticationUser AuthenticationRealm::authenticate(Context *c, const ParamsMul
 
 void AuthenticationRealm::removePersistedUser(Context *c)
 {
-    Session::deleteValues(c, {QStringLiteral(SESSION_AUTHENTICATION_USER), QStringLiteral(SESSION_AUTHENTICATION_USER_REALM)});
+    Session::deleteValues(c,
+                          {QStringLiteral(SESSION_AUTHENTICATION_USER),
+                           QStringLiteral(SESSION_AUTHENTICATION_USER_REALM)});
 }
 
 AuthenticationUser AuthenticationRealm::persistUser(Context *c, const AuthenticationUser &user)
 {
-    Session::setValue(c,
-                      QStringLiteral(SESSION_AUTHENTICATION_USER),
-                      m_store->forSession(c, user));
-    Session::setValue(c,
-                      QStringLiteral(SESSION_AUTHENTICATION_USER_REALM),
-                      objectName());
+    Session::setValue(c, QStringLiteral(SESSION_AUTHENTICATION_USER), m_store->forSession(c, user));
+    Session::setValue(c, QStringLiteral(SESSION_AUTHENTICATION_USER_REALM), objectName());
 
     return user;
 }
@@ -104,7 +104,8 @@ AuthenticationUser AuthenticationRealm::restoreUser(Context *c, const QVariant &
         // Sets the realm the user originated in
         user.setAuthRealm(objectName());
     } else {
-        qCWarning(C_AUTH_REALM) << "Store claimed to have a restorable user, but restoration failed. Did you change the user's id_field?";
+        qCWarning(C_AUTH_REALM) << "Store claimed to have a restorable user, but restoration "
+                                   "failed. Did you change the user's id_field?";
     }
 
     return user;

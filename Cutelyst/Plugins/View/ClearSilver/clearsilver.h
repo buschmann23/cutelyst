@@ -5,10 +5,10 @@
 #ifndef CLEARSILVER_H
 #define CLEARSILVER_H
 
+#include <Cutelyst/View>
+
 #include <QObject>
 #include <QStringList>
-
-#include <Cutelyst/View>
 
 namespace Cutelyst {
 
@@ -34,7 +34,8 @@ public:
      */
     void setIncludePaths(const QStringList &paths);
 
-    Q_PROPERTY(QString templateExtension READ templateExtension WRITE setTemplateExtension NOTIFY changed)
+    Q_PROPERTY(
+        QString templateExtension READ templateExtension WRITE setTemplateExtension NOTIFY changed)
     /*!
      * Returns the template extension
      */
@@ -63,6 +64,6 @@ Q_SIGNALS:
     void changed();
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CLEARSILVER_H

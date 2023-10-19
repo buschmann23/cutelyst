@@ -5,10 +5,10 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include <QObject>
-
-#include <Cutelyst/cutelyst_global.h>
 #include <Cutelyst/component.h>
+#include <Cutelyst/cutelyst_global.h>
+
+#include <QObject>
 
 namespace Cutelyst {
 
@@ -50,6 +50,7 @@ public:
      * To disable Deflate, set @p minSize to a negative integer.
      */
     void setMinimalSizeToDeflate(qint32 minSize = -1);
+
 private:
     /**
      * This is used by Component execute() when
@@ -59,11 +60,12 @@ private:
 
 protected:
     /*!
-     * A derived class using pimpl should call this constructor, to reduce the number of memory allocations
+     * A derived class using pimpl should call this constructor, to reduce the number of memory
+     * allocations
      */
     explicit View(ViewPrivate *d, QObject *parent, const QString &name);
 };
 
-}
+} // namespace Cutelyst
 
 #endif // VIEW_H

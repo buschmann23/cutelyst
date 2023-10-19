@@ -7,10 +7,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#include <cutelee/filter.h>
-#include <cutelee/safestring.h>
-#include <cutelee/util.h>
-#include <cutelee/node.h>
+#    include <cutelee/filter.h>
+#    include <cutelee/node.h>
+#    include <cutelee/safestring.h>
+#    include <cutelee/util.h>
 
 class UriForTag final : public Cutelee::AbstractNodeFactory
 {
@@ -21,7 +21,9 @@ class UriFor final : public Cutelee::Node
 {
     Q_OBJECT
 public:
-    explicit UriFor(const QString &path, const QStringList &args, Cutelee::Parser *parser = nullptr);
+    explicit UriFor(const QString &path,
+                    const QStringList &args,
+                    Cutelee::Parser *parser = nullptr);
 
     void render(Cutelee::OutputStream *stream, Cutelee::Context *gc) const override;
 

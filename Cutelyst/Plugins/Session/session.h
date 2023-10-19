@@ -5,15 +5,16 @@
 #ifndef CSESSION_H
 #define CSESSION_H
 
-#include <QVariant>
-
-#include <Cutelyst/plugin.h>
 #include <Cutelyst/cutelyst_global.h>
+#include <Cutelyst/plugin.h>
+
+#include <QVariant>
 
 namespace Cutelyst {
 
 class Context;
-class CUTELYST_PLUGIN_SESSION_EXPORT SessionStore : public QObject {
+class CUTELYST_PLUGIN_SESSION_EXPORT SessionStore : public QObject
+{
     Q_OBJECT
 public:
     /**
@@ -22,14 +23,21 @@ public:
     explicit SessionStore(QObject *parent = nullptr);
 
     /**
-     * Returns the session data for the given session id sid and key, if key does not exist returns defaultValue.
+     * Returns the session data for the given session id sid and key, if key does not exist returns
+     * defaultValue.
      */
-    virtual QVariant getSessionData(Context *c, const QString &sid, const QString &key, const QVariant &defaultValue = QVariant()) = 0;
+    virtual QVariant getSessionData(Context *c,
+                                    const QString &sid,
+                                    const QString &key,
+                                    const QVariant &defaultValue = QVariant()) = 0;
 
     /**
      * Stores the session data for the given session id sid and key to value.
      */
-    virtual bool storeSessionData(Context *c, const QString &sid, const QString &key, const QVariant &value) = 0;
+    virtual bool storeSessionData(Context *c,
+                                  const QString &sid,
+                                  const QString &key,
+                                  const QVariant &value) = 0;
 
     /**
      * Removes all session data for the given session id sid and key.
@@ -48,7 +56,8 @@ class SessionPrivate;
  *
  * <H3>Configuration file options</H3>
  *
- * There are some options you can set in your application configuration file in the @c Cutelyst_Session_Plugin section.
+ * There are some options you can set in your application configuration file in the @c
+ * Cutelyst_Session_Plugin section.
  *
  * @par expires
  * @parblock
@@ -93,9 +102,10 @@ class SessionPrivate;
  * @parblock
  * String value, default: strict; acceptable values: default, none, lax, strict
  *
- * Defines the SameSite attribute of the session cookie. See <A HREF="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite">MDN</A>
- * to learn more about SameSite cookies. This configuration key is available since
- * Cutelyst 3.8.0 and is only available if Cutelyst is compiled against Qt 6.1.0 or newer.
+ * Defines the SameSite attribute of the session cookie. See <A
+ * HREF="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite">MDN</A> to
+ * learn more about SameSite cookies. This configuration key is available since Cutelyst 3.8.0 and
+ * is only available if Cutelyst is compiled against Qt 6.1.0 or newer.
  * @endparblock
  */
 class CUTELYST_PLUGIN_SESSION_EXPORT Session : public Plugin
@@ -131,8 +141,9 @@ public:
     static QString id(Context *c);
 
     /**
-     * This method returns the time when the current session will expire, or 0 if there is no current session.
-     * If there is a session and it already expired, it will delete the session and return 0 as well.
+     * This method returns the time when the current session will expire, or 0 if there is no
+     * current session. If there is a session and it already expired, it will delete the session and
+     * return 0 as well.
      */
     static quint64 expires(Context *c);
 
@@ -162,10 +173,12 @@ public:
     /**
      * Returns the value for session key. If the session key doesn't exist, returns defaultValue.
      */
-    static QVariant value(Context *c, const QString &key, const QVariant &defaultValue = QVariant());
+    static QVariant
+        value(Context *c, const QString &key, const QVariant &defaultValue = QVariant());
 
     /**
-     * Sets the value for session key to value. If the key already exists, the previous value is overwritten.
+     * Sets the value for session key to value. If the key already exists, the previous value is
+     * overwritten.
      */
     static void setValue(Context *c, const QString &key, const QVariant &value);
 
@@ -188,9 +201,9 @@ protected:
     SessionPrivate *d_ptr;
 
 private:
-    Q_PRIVATE_SLOT(d_func(), void _q_saveSession(Context*))
+    Q_PRIVATE_SLOT(d_func(), void _q_saveSession(Context *))
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CSESSION_H

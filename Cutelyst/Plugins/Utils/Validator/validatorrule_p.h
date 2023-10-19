@@ -6,13 +6,15 @@
 #define CUTELYSTVALIDATORRULE_P_H
 
 #include "validatorrule.h"
-#include <QDate>
-#include <QTime>
-#include <QDateTime>
-#include <QTimeZone>
-#include <QLocale>
+
 #include <Cutelyst/Context>
 #include <limits>
+
+#include <QDate>
+#include <QDateTime>
+#include <QLocale>
+#include <QTime>
+#include <QTimeZone>
 
 namespace Cutelyst {
 
@@ -22,11 +24,12 @@ class ValidatorRulePrivate
 public:
     ValidatorRulePrivate() {}
 
-    ValidatorRulePrivate(const QString &f, const ValidatorMessages &m, const QString &dvk) :
-        field(f),
-        defValKey(dvk),
-        messages(m)
-    {}
+    ValidatorRulePrivate(const QString &f, const ValidatorMessages &m, const QString &dvk)
+        : field(f)
+        , defValKey(dvk)
+        , messages(m)
+    {
+    }
 
     virtual ~ValidatorRulePrivate() {}
 
@@ -37,8 +40,10 @@ public:
         Q_ASSERT(c);
 
         if (format) {
-            const QString _format = translationContext.size() ? c->translate(translationContext.data(), format) : QString::fromUtf8(format);
-            d = QDate::fromString(date, _format);
+            const QString _format = translationContext.size()
+                                        ? c->translate(translationContext.data(), format)
+                                        : QString::fromUtf8(format);
+            d                     = QDate::fromString(date, _format);
             if (d.isValid()) {
                 return d;
             }
@@ -65,7 +70,6 @@ public:
         return d;
     }
 
-
     QTime extractTime(Context *c, const QString &time, const char *format = nullptr) const
     {
         QTime t;
@@ -73,8 +77,10 @@ public:
         Q_ASSERT(c);
 
         if (format) {
-            const QString _format = translationContext.size() ? c->translate(translationContext.data(), format) : QString::fromUtf8(format);
-            t = QTime::fromString(time, _format);
+            const QString _format = translationContext.size()
+                                        ? c->translate(translationContext.data(), format)
+                                        : QString::fromUtf8(format);
+            t                     = QTime::fromString(time, _format);
             if (t.isValid()) {
                 return t;
             }
@@ -101,16 +107,20 @@ public:
         return t;
     }
 
-
-    QDateTime extractDateTime(Context *c, const QString &dateTime, const char *format = nullptr, const QTimeZone &tz = QTimeZone()) const
+    QDateTime extractDateTime(Context *c,
+                              const QString &dateTime,
+                              const char *format  = nullptr,
+                              const QTimeZone &tz = QTimeZone()) const
     {
         QDateTime dt;
 
         Q_ASSERT(c);
 
         if (format) {
-            const QString _format = translationContext.size() ? c->translate(translationContext.data(), format) : QString::fromUtf8(format);
-            dt = QDateTime::fromString(dateTime, _format);
+            const QString _format = translationContext.size()
+                                        ? c->translate(translationContext.data(), format)
+                                        : QString::fromUtf8(format);
+            dt                    = QDateTime::fromString(dateTime, _format);
             if (dt.isValid()) {
                 if (tz.isValid()) {
                     dt.setTimeZone(tz);
@@ -150,7 +160,11 @@ public:
         return dt;
     }
 
-    QVariant extractOtherDateTime(Context *c, const ParamsMultiMap &params, const QString &field, const QTimeZone &tz = QTimeZone(), const char *format = nullptr) const
+    QVariant extractOtherDateTime(Context *c,
+                                  const ParamsMultiMap &params,
+                                  const QString &field,
+                                  const QTimeZone &tz = QTimeZone(),
+                                  const char *format  = nullptr) const
     {
         QVariant var;
 
@@ -159,7 +173,7 @@ public:
         int sepPos = field.indexOf(QLatin1Char('|'));
         if (sepPos > -1) {
             const QString fieldName = field.left(sepPos);
-            const QString value = params.value(fieldName);
+            const QString value     = params.value(fieldName);
             if (!value.isEmpty()) {
                 const QString type = field.mid(sepPos + 1);
                 if (type.startsWith(u"dt")) {
@@ -200,7 +214,7 @@ public:
 
         if (!tz.isValid()) {
             const QString tzString = params.value(field, c->stash(field).toString());
-//            const QString tzString = c->stash(field).toString();
+            //            const QString tzString = c->stash(field).toString();
             if (!tzString.isEmpty()) {
                 tz = QTimeZone(tzString.toLatin1());
                 if (!tz.isValid()) {
@@ -212,7 +226,8 @@ public:
         return tz;
     }
 
-    static qlonglong extractLongLong(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
+    static qlonglong
+        extractLongLong(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
     {
         qlonglong val = 0;
 
@@ -222,13 +237,14 @@ public:
 
         if (value.userType() == QMetaType::QString) {
             const QString field = value.toString();
-/*            if (params.contains(field)) {
-                const QString v = params.value(field);
-                val = v.toLongLong(ok);
-//                if (!*ok) {
-//                    val = c->locale().toLongLong(v, ok);
-//                }
-            } else */if (c->stash().contains(field)) {
+            /*            if (params.contains(field)) {
+                            const QString v = params.value(field);
+                            val = v.toLongLong(ok);
+            //                if (!*ok) {
+            //                    val = c->locale().toLongLong(v, ok);
+            //                }
+                        } else */
+            if (c->stash().contains(field)) {
                 val = c->stash(field).toLongLong(ok);
             } else {
                 *ok = false;
@@ -240,7 +256,8 @@ public:
         return val;
     }
 
-    static qulonglong extractULongLong(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
+    static qulonglong
+        extractULongLong(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
     {
         qulonglong val = 0;
 
@@ -250,13 +267,14 @@ public:
 
         if (value.userType() == QMetaType::QString) {
             const QString field = value.toString();
-/*            if (params.contains(field)) {
-                const QString v = params.value(field);
-                val = v.toULongLong(ok);
-//                if (!*ok) {
-//                    val = c->locale().toULongLong(v, ok);
-//                }
-            } else */if (c->stash().contains(field)) {
+            /*            if (params.contains(field)) {
+                            const QString v = params.value(field);
+                            val = v.toULongLong(ok);
+            //                if (!*ok) {
+            //                    val = c->locale().toULongLong(v, ok);
+            //                }
+                        } else */
+            if (c->stash().contains(field)) {
                 val = c->stash(field).toULongLong(ok);
             } else {
                 *ok = false;
@@ -268,7 +286,8 @@ public:
         return val;
     }
 
-    static double extractDouble(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
+    static double
+        extractDouble(Context *c, const ParamsMultiMap &params, const QVariant &value, bool *ok)
     {
         double val = 0.0;
 
@@ -278,13 +297,14 @@ public:
 
         if (value.userType() == QMetaType::QString) {
             const QString field = value.toString();
-/*            if (params.contains(field)) {
-                const QString v = params.value(field);
-                val = v.toDouble(ok);
-//                if (!*ok) {
-//                    val = c->locale().toDouble(v, ok);
-//                }
-            } else*/ if (c->stash().contains(field)) {
+            /*            if (params.contains(field)) {
+                            const QString v = params.value(field);
+                            val = v.toDouble(ok);
+            //                if (!*ok) {
+            //                    val = c->locale().toDouble(v, ok);
+            //                }
+                        } else*/
+            if (c->stash().contains(field)) {
                 val = c->stash(field).toDouble(ok);
             } else {
                 *ok = false;
@@ -306,13 +326,14 @@ public:
 
         if (value.userType() == QMetaType::QString) {
             const QString field = value.toString();
-/*            if (params.contains(field)) {
-                const QString _val = params.value(field);
-                val = _val.toInt(ok);
-//                if (!*ok) {
-//                    val = c->locale().toInt(_val, ok);
-//                }
-            } else*/ if (c->stash().contains(field)) {
+            /*            if (params.contains(field)) {
+                            const QString _val = params.value(field);
+                            val = _val.toInt(ok);
+            //                if (!*ok) {
+            //                    val = c->locale().toInt(_val, ok);
+            //                }
+                        } else*/
+            if (c->stash().contains(field)) {
                 val = c->stash(field).toInt(ok);
             } else {
                 *ok = false;
@@ -337,128 +358,121 @@ public:
         {
             const short _v = value.toShort(&ok);
             if (ok) {
-                if ((_v < static_cast<short>(std::numeric_limits<char>::max())) && (_v > static_cast<short>(std::numeric_limits<char>::min()))) {
+                if ((_v < static_cast<short>(std::numeric_limits<char>::max())) &&
+                    (_v > static_cast<short>(std::numeric_limits<char>::min()))) {
                     var.setValue<char>(static_cast<char>(_v));
                 }
             }
-        }
-            break;
+        } break;
         case QMetaType::Short:
         {
-//            const short v = c->locale().toShort(value, &ok);
+            //            const short v = c->locale().toShort(value, &ok);
             const short v = value.toShort(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::Int:
         {
-//            const int v = c->locale().toInt(value, &ok);
+            //            const int v = c->locale().toInt(value, &ok);
             const int v = value.toInt(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::Long:
         {
             const long v = value.toLong(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::LongLong:
         {
-//            const qlonglong v = c->locale().toLongLong(value, &ok);
-//            if (ok) {
-//                if (type == QMetaType::Long) {
-//                    if (v < static_cast<qlonglong>(std::numeric_limits<long>::max())) {
-//                        var.setValue<long>(static_cast<long>(v));
-//                    }
-//                } else {
-//                    var.setValue<qlonglong>(v);
-//                }
-//            }
+            //            const qlonglong v = c->locale().toLongLong(value, &ok);
+            //            if (ok) {
+            //                if (type == QMetaType::Long) {
+            //                    if (v < static_cast<qlonglong>(std::numeric_limits<long>::max()))
+            //                    {
+            //                        var.setValue<long>(static_cast<long>(v));
+            //                    }
+            //                } else {
+            //                    var.setValue<qlonglong>(v);
+            //                }
+            //            }
             const qlonglong v = value.toLongLong(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::UChar:
         {
             const ushort _v = value.toUShort(&ok);
             if (ok) {
-                if ((_v < static_cast<ushort>(std::numeric_limits<uchar>::max())) && (_v > static_cast<ushort>(std::numeric_limits<uchar>::min()))) {
+                if ((_v < static_cast<ushort>(std::numeric_limits<uchar>::max())) &&
+                    (_v > static_cast<ushort>(std::numeric_limits<uchar>::min()))) {
                     var.setValue<uchar>(static_cast<uchar>(_v));
                 }
             }
-        }
-            break;
+        } break;
         case QMetaType::UShort:
         {
-//            const ushort v = c->locale().toUShort(value, &ok);
+            //            const ushort v = c->locale().toUShort(value, &ok);
             const ushort v = value.toUShort(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::UInt:
         {
-//            const uint v = c->locale().toUInt(value, &ok);
+            //            const uint v = c->locale().toUInt(value, &ok);
             const uint v = value.toUInt(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::ULong:
         {
             const ulong v = value.toULong(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::ULongLong:
         {
-//            const qulonglong v = c->locale().toULongLong(value, &ok);
-//            if (ok) {
-//                if (type == QMetaType::ULong) {
-//                    if ((v > static_cast<qulonglong>(std::numeric_limits<ulong>::min())) && (v < static_cast<qulonglong>(std::numeric_limits<ulong>::max()))) {
-//                        var.setValue<ulong>(static_cast<ulong>(v));
-//                    }
-//                } else {
-//                    var.setValue<qulonglong>(v);
-//                }
-//            }
+            //            const qulonglong v = c->locale().toULongLong(value, &ok);
+            //            if (ok) {
+            //                if (type == QMetaType::ULong) {
+            //                    if ((v >
+            //                    static_cast<qulonglong>(std::numeric_limits<ulong>::min())) && (v
+            //                    < static_cast<qulonglong>(std::numeric_limits<ulong>::max()))) {
+            //                        var.setValue<ulong>(static_cast<ulong>(v));
+            //                    }
+            //                } else {
+            //                    var.setValue<qulonglong>(v);
+            //                }
+            //            }
             const qulonglong v = value.toULongLong(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::Float:
         {
-//            const float v = c->locale().toFloat(value, &ok);
+            //            const float v = c->locale().toFloat(value, &ok);
             const float v = value.toFloat(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         case QMetaType::Double:
         {
-//            const double v = c->locale().toDouble(value, &ok);
+            //            const double v = c->locale().toDouble(value, &ok);
             const double v = value.toDouble(&ok);
             if (ok) {
                 var.setValue(v);
             }
-        }
-            break;
+        } break;
         default:
             break;
         }
@@ -473,7 +487,6 @@ public:
     bool trimBefore = true;
 };
 
-}
+} // namespace Cutelyst
 
-#endif //CUTELYSTVALIDATORRULE_P_H
-
+#endif // CUTELYSTVALIDATORRULE_P_H

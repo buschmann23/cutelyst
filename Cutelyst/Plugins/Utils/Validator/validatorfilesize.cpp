@@ -4,23 +4,32 @@
  */
 
 #include "validatorfilesize_p.h"
+
 #include <cmath>
 #include <limits>
 
 using namespace Cutelyst;
 
-ValidatorFileSize::ValidatorFileSize(const QString &field, Option option, const QVariant &min, const QVariant &max, const ValidatorMessages &messages, const QString &defValKey) :
-    ValidatorRule(*new ValidatorFileSizePrivate(field, option, min, max, messages, defValKey))
+ValidatorFileSize::ValidatorFileSize(const QString &field,
+                                     Option option,
+                                     const QVariant &min,
+                                     const QVariant &max,
+                                     const ValidatorMessages &messages,
+                                     const QString &defValKey)
+    : ValidatorRule(*new ValidatorFileSizePrivate(field, option, min, max, messages, defValKey))
 {
-
 }
 
 ValidatorFileSize::~ValidatorFileSize()
 {
-
 }
 
-bool ValidatorFileSize::validate(const QString &value, double min, double max, Cutelyst::ValidatorFileSize::Option option, const QLocale &locale, double *fileSize)
+bool ValidatorFileSize::validate(const QString &value,
+                                 double min,
+                                 double max,
+                                 Cutelyst::ValidatorFileSize::Option option,
+                                 const QLocale &locale,
+                                 double *fileSize)
 {
     bool valid = true;
 
@@ -28,10 +37,10 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
     QString symbolPart;
     bool decimalPointFound = false;
     const QString decimalPoint(locale.decimalPoint());
-    int multiplier = 0;
-    bool binary = false;
+    int multiplier     = 0;
+    bool binary        = false;
     bool byteSignFound = false;
-    qint8 startsWith = 0; // 0 not set, -1 digit part, 1 symbol part
+    qint8 startsWith   = 0; // 0 not set, -1 digit part, 1 symbol part
 
     for (const QChar &ch : value) {
         if (valid) {
@@ -48,19 +57,22 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                         decimalPointFound = true;
                     }
                 }
-                if ((symbolPart.isEmpty() && (startsWith < 0)) || (!symbolPart.isEmpty() && (startsWith > 0))) {
+                if ((symbolPart.isEmpty() && (startsWith < 0)) ||
+                    (!symbolPart.isEmpty() && (startsWith > 0))) {
                     digitPart.append(ch);
                 } else {
                     valid = false;
                     break;
                 }
-            } else if ((uc != 9) && (uc != 32)) { // not a digit or decimal point and not a space or tab
+            } else if ((uc != 9) &&
+                       (uc != 32)) { // not a digit or decimal point and not a space or tab
                 if (startsWith == 0) {
                     startsWith = 1;
                 }
-                if ((digitPart.isEmpty() && (startsWith > 0)) || (!digitPart.isEmpty() && (startsWith < 0))) {
+                if ((digitPart.isEmpty() && (startsWith > 0)) ||
+                    (!digitPart.isEmpty() && (startsWith < 0))) {
                     switch (uc) {
-                    case 75: // K
+                    case 75:  // K
                     case 107: // k
                     {
                         if (multiplier > 0) {
@@ -69,9 +81,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 1;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 77: // M
+                    } break;
+                    case 77:  // M
                     case 109: // m
                     {
                         if (multiplier > 0) {
@@ -80,9 +91,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 2;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 71: // G
+                    } break;
+                    case 71:  // G
                     case 103: // g
                     {
                         if (multiplier > 0) {
@@ -91,9 +101,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 3;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 84: // T
+                    } break;
+                    case 84:  // T
                     case 116: // t
                     {
                         if (multiplier > 0) {
@@ -102,9 +111,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 4;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 80: // P
+                    } break;
+                    case 80:  // P
                     case 112: // p
                     {
                         if (multiplier > 0) {
@@ -113,9 +121,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 5;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 69: // E
+                    } break;
+                    case 69:  // E
                     case 101: // e
                     {
                         if (multiplier > 0) {
@@ -124,9 +131,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 6;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 90: // Z
+                    } break;
+                    case 90:  // Z
                     case 122: // z
                     {
                         if (multiplier > 0) {
@@ -135,9 +141,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 7;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 89: // Y
+                    } break;
+                    case 89:  // Y
                     case 121: // y
                     {
                         if (multiplier > 0) {
@@ -146,9 +151,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             multiplier = 8;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 73: // I
+                    } break;
+                    case 73:  // I
                     case 105: // i
                     {
                         if ((multiplier == 0) || binary) {
@@ -157,8 +161,7 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             binary = true;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
+                    } break;
                     case 66: // B
                     case 98: // b
                     {
@@ -168,9 +171,8 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
                             byteSignFound = true;
                             symbolPart.append(ch);
                         }
-                    }
-                        break;
-                    case 9: // horizontal tab
+                    } break;
+                    case 9:  // horizontal tab
                     case 32: // space
                         break;
                     default:
@@ -198,13 +200,14 @@ bool ValidatorFileSize::validate(const QString &value, double min, double max, C
     }
 
     if (valid) {
-        bool ok = false;
+        bool ok     = false;
         double size = locale.toDouble(digitPart, &ok);
         if (!ok) {
             valid = false;
         } else {
             if (multiplier > 0) {
-                const double _mult = binary ? std::exp2(multiplier * 10) : std::pow(10.0, multiplier * 3);
+                const double _mult =
+                    binary ? std::exp2(multiplier * 10) : std::pow(10.0, multiplier * 3);
                 size *= _mult;
             }
             if ((min >= 1.0) && (size < min)) {
@@ -234,7 +237,7 @@ ValidatorReturnType ValidatorFileSize::validate(Context *c, const ParamsMultiMap
 
         double min = -1;
         double max = -1;
-        bool ok = true;
+        bool ok    = true;
         if (d->min.isValid()) {
             min = d->extractDouble(c, params, d->min, &ok);
             if (!ok) {
@@ -277,15 +280,21 @@ QString ValidatorFileSize::genericValidationError(Context *c, const QVariant &er
     const QString _label = label(c);
     if (d->min.isValid() || d->max.isValid()) {
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorFileSize", "Invalid file size or file size not within the allowed limits.");
+            error = c->translate("Cutelyst::ValidatorFileSize",
+                                 "Invalid file size or file size not within the allowed limits.");
         } else {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The value in the “%1” field is either not a valid file size or not within the allowed limits.").arg(_label);
+            error = c->translate("Cutelyst::ValidatorFileSize",
+                                 "The value in the “%1” field is either not a valid file size or "
+                                 "not within the allowed limits.")
+                        .arg(_label);
         }
     } else {
         if (_label.isEmpty()) {
             error = c->translate("Cutelyst::ValidatorFileSize", "Invalid file size.");
         } else {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The “%1” field does not contain a valid file size.").arg(_label);
+            error = c->translate("Cutelyst::ValidatorFileSize",
+                                 "The “%1” field does not contain a valid file size.")
+                        .arg(_label);
         }
     }
 
@@ -302,15 +311,23 @@ QString ValidatorFileSize::genericValidationDataError(Context *c, const QVariant
 
     if (sizeType == 0) { // minimum file size
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The minimum file size comparison value is not valid.");
+            error = c->translate("Cutelyst::ValidatorFileSize",
+                                 "The minimum file size comparison value is not valid.");
         } else {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The minimum file size comparison value for the “%1” field is not valid.").arg(_label);
+            error = c->translate(
+                         "Cutelyst::ValidatorFileSize",
+                         "The minimum file size comparison value for the “%1” field is not valid.")
+                        .arg(_label);
         }
     } else {
         if (_label.isEmpty()) {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The maximum file size comparison value is not valid.");
+            error = c->translate("Cutelyst::ValidatorFileSize",
+                                 "The maximum file size comparison value is not valid.");
         } else {
-            error = c->translate("Cutelyst::ValidatorFileSize", "The maximum file size comparison value for the “%1” field is not valid.").arg(_label);
+            error = c->translate(
+                         "Cutelyst::ValidatorFileSize",
+                         "The maximum file size comparison value for the “%1” field is not valid.")
+                        .arg(_label);
         }
     }
 
@@ -320,5 +337,8 @@ QString ValidatorFileSize::genericValidationDataError(Context *c, const QVariant
 void ValidatorFileSize::inputPattern(Context *c, const QString &stashKey)
 {
     Q_ASSERT(c);
-    c->setStash(stashKey, c->locale().textDirection() == Qt::LeftToRight ? QStringLiteral("^\\d+[,.٫]?\\d*\\s*[KkMmGgTt]?[Ii]?[Bb]?") : QStringLiteral("[KkMmGgTt]?[Ii]?[Bb]?\\s*\\d+[,.٫]?\\d*"));
+    c->setStash(stashKey,
+                c->locale().textDirection() == Qt::LeftToRight
+                    ? QStringLiteral("^\\d+[,.٫]?\\d*\\s*[KkMmGgTt]?[Ii]?[Bb]?")
+                    : QStringLiteral("[KkMmGgTt]?[Ii]?[Bb]?\\s*\\d+[,.٫]?\\d*"));
 }

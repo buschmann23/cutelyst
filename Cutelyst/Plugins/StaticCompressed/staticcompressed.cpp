@@ -6,35 +6,36 @@
 #include "staticcompressed_p.h"
 
 #include <Cutelyst/Application>
-#include <Cutelyst/Request>
-#include <Cutelyst/Response>
 #include <Cutelyst/Context>
 #include <Cutelyst/Engine>
+#include <Cutelyst/Request>
+#include <Cutelyst/Response>
 
-#include <QMimeDatabase>
-#include <QFile>
-#include <QDateTime>
-#include <QStandardPaths>
 #include <QCoreApplication>
 #include <QCryptographicHash>
-#include <QLoggingCategory>
 #include <QDataStream>
+#include <QDateTime>
+#include <QFile>
 #include <QLockFile>
+#include <QLoggingCategory>
+#include <QMimeDatabase>
+#include <QStandardPaths>
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_ZOPFLI
-#include <zopfli.h>
+#    include <zopfli.h>
 #endif
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_BROTLI
-#include <brotli/encode.h>
+#    include <brotli/encode.h>
 #endif
 
 using namespace Cutelyst;
 
 Q_LOGGING_CATEGORY(C_STATICCOMPRESSED, "cutelyst.plugin.staticcompressed", QtWarningMsg)
 
-StaticCompressed::StaticCompressed(Application *parent) :
-    Plugin(parent), d_ptr(new StaticCompressedPrivate)
+StaticCompressed::StaticCompressed(Application *parent)
+    : Plugin(parent)
+    , d_ptr(new StaticCompressedPrivate)
 {
     Q_D(StaticCompressed);
     d->includePaths.append(parent->config(QStringLiteral("root")).toString());
@@ -42,7 +43,6 @@ StaticCompressed::StaticCompressed(Application *parent) :
 
 StaticCompressed::~StaticCompressed()
 {
-
 }
 
 void StaticCompressed::setIncludePaths(const QStringList &paths)
@@ -64,36 +64,54 @@ bool StaticCompressed::setup(Application *app)
 {
     Q_D(StaticCompressed);
 
-    const QVariantMap config = app->engine()->config(QStringLiteral("Cutelyst_StaticCompressed_Plugin"));
-    const QString _defaultCacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QLatin1String("/compressed-static");
-    d->cacheDir.setPath(config.value(QStringLiteral("cache_directory"), _defaultCacheDir).toString());
+    const QVariantMap config =
+        app->engine()->config(QStringLiteral("Cutelyst_StaticCompressed_Plugin"));
+    const QString _defaultCacheDir =
+        QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +
+        QLatin1String("/compressed-static");
+    d->cacheDir.setPath(
+        config.value(QStringLiteral("cache_directory"), _defaultCacheDir).toString());
 
     if (Q_UNLIKELY(!d->cacheDir.exists())) {
         if (!d->cacheDir.mkpath(d->cacheDir.absolutePath())) {
-            qCCritical(C_STATICCOMPRESSED, "Failed to create cache directory for compressed static files at \"%s\".", qPrintable(d->cacheDir.absolutePath()));
+            qCCritical(C_STATICCOMPRESSED,
+                       "Failed to create cache directory for compressed static files at \"%s\".",
+                       qPrintable(d->cacheDir.absolutePath()));
             return false;
         }
     }
 
-    qCInfo(C_STATICCOMPRESSED, "Compressed cache directory: %s", qPrintable(d->cacheDir.absolutePath()));
+    qCInfo(C_STATICCOMPRESSED,
+           "Compressed cache directory: %s",
+           qPrintable(d->cacheDir.absolutePath()));
 
-    const QString _mimeTypes = config.value(QStringLiteral("mime_types"), QStringLiteral("text/css,application/javascript")).toString();
+    const QString _mimeTypes =
+        config
+            .value(QStringLiteral("mime_types"), QStringLiteral("text/css,application/javascript"))
+            .toString();
     qCInfo(C_STATICCOMPRESSED, "MIME Types: %s", qPrintable(_mimeTypes));
     d->mimeTypes = _mimeTypes.split(u',', Qt::SkipEmptyParts);
 
-    const QString _suffixes = config.value(QStringLiteral("suffixes"), QStringLiteral("js.map,css.map,min.js.map,min.css.map")).toString();
+    const QString _suffixes = config
+                                  .value(QStringLiteral("suffixes"),
+                                         QStringLiteral("js.map,css.map,min.js.map,min.css.map"))
+                                  .toString();
     qCInfo(C_STATICCOMPRESSED, "Suffixes: %s", qPrintable(_suffixes));
     d->suffixes = _suffixes.split(u',', Qt::SkipEmptyParts);
 
     d->checkPreCompressed = config.value(QStringLiteral("check_pre_compressed"), true).toBool();
-    qCInfo(C_STATICCOMPRESSED, "Check for pre-compressed files: %s", d->checkPreCompressed ? "true" : "false");
+    qCInfo(C_STATICCOMPRESSED,
+           "Check for pre-compressed files: %s",
+           d->checkPreCompressed ? "true" : "false");
 
     d->onTheFlyCompression = config.value(QStringLiteral("on_the_fly_compression"), true).toBool();
-    qCInfo(C_STATICCOMPRESSED, "Compress static files on the fly: %s", d->onTheFlyCompression ? "true" : "false");
+    qCInfo(C_STATICCOMPRESSED,
+           "Compress static files on the fly: %s",
+           d->onTheFlyCompression ? "true" : "false");
 
     QStringList supportedCompressions{QStringLiteral("deflate"), QStringLiteral("gzip")};
 
-    bool ok = false;
+    bool ok                 = false;
     d->zlibCompressionLevel = config.value(QStringLiteral("zlib_compression_level"), 9).toInt(&ok);
     if (!ok || (d->zlibCompressionLevel < -1) || (d->zlibCompressionLevel > 9)) {
         d->zlibCompressionLevel = -1;
@@ -109,14 +127,18 @@ bool StaticCompressed::setup(Application *app)
 #endif
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_BROTLI
-    d->brotliQualityLevel = config.value(QStringLiteral("brotli_quality_level"), BROTLI_DEFAULT_QUALITY).toInt(&ok);
-    if (!ok || (d->brotliQualityLevel < BROTLI_MIN_QUALITY) || (d->brotliQualityLevel > BROTLI_MAX_QUALITY)) {
+    d->brotliQualityLevel =
+        config.value(QStringLiteral("brotli_quality_level"), BROTLI_DEFAULT_QUALITY).toInt(&ok);
+    if (!ok || (d->brotliQualityLevel < BROTLI_MIN_QUALITY) ||
+        (d->brotliQualityLevel > BROTLI_MAX_QUALITY)) {
         d->brotliQualityLevel = BROTLI_DEFAULT_QUALITY;
     }
     supportedCompressions << QStringLiteral("brotli");
 #endif
 
-    qCInfo(C_STATICCOMPRESSED, "Supported compressions: %s", qPrintable(supportedCompressions.join(u',')));
+    qCInfo(C_STATICCOMPRESSED,
+           "Supported compressions: %s",
+           qPrintable(supportedCompressions.join(u',')));
 
     connect(app, &Application::beforePrepareAction, this, [d](Context *c, bool *skipMethod) {
         d->beforePrepareAction(c, skipMethod);
@@ -131,7 +153,7 @@ void StaticCompressedPrivate::beforePrepareAction(Context *c, bool *skipMethod)
         return;
     }
 
-    const QString path = c->req()->path();
+    const QString path           = c->req()->path();
     const QRegularExpression _re = re; // Thread-safe
 
     for (const QString &dir : dirs) {
@@ -160,7 +182,7 @@ bool StaticCompressedPrivate::locateCompressedFile(Context *c, const QString &re
         const QString path = includePath.absoluteFilePath(relPath);
         const QFileInfo fileInfo(path);
         if (fileInfo.exists()) {
-            Response *res = c->res();
+            Response *res                   = c->res();
             const QDateTime currentDateTime = fileInfo.lastModified();
             if (!c->req()->headers().ifModifiedSince(currentDateTime)) {
                 res->setStatus(Response::NotModified);
@@ -179,39 +201,50 @@ bool StaticCompressedPrivate::locateCompressedFile(Context *c, const QString &re
                 // QMimeDatabase might not find the correct mime type for some specific types
                 // especially for map files for CSS and JS
                 if (mimeType.isDefault()) {
-                    if (path.endsWith(u"css.map", Qt::CaseInsensitive) || path.endsWith(u"js.map", Qt::CaseInsensitive)) {
+                    if (path.endsWith(u"css.map", Qt::CaseInsensitive) ||
+                        path.endsWith(u"js.map", Qt::CaseInsensitive)) {
                         _mimeTypeName = QStringLiteral("application/json");
                     }
                 }
 
-                if (mimeTypes.contains(mimeType.name(), Qt::CaseInsensitive) || suffixes.contains(fileInfo.completeSuffix(), Qt::CaseInsensitive)) {
+                if (mimeTypes.contains(mimeType.name(), Qt::CaseInsensitive) ||
+                    suffixes.contains(fileInfo.completeSuffix(), Qt::CaseInsensitive)) {
 
-                    const QString acceptEncoding = c->req()->header(QStringLiteral("Accept-Encoding"));
+                    const QString acceptEncoding =
+                        c->req()->header(QStringLiteral("Accept-Encoding"));
                     qCDebug(C_STATICCOMPRESSED) << "Accept-Encoding:" << acceptEncoding;
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_BROTLI
                     if (acceptEncoding.contains(QLatin1String("br"), Qt::CaseInsensitive)) {
-                        compressedPath = locateCacheFile(path, currentDateTime, Brotli)                        ;
+                        compressedPath = locateCacheFile(path, currentDateTime, Brotli);
                         if (!compressedPath.isEmpty()) {
-                            qCDebug(C_STATICCOMPRESSED, "Serving brotli compressed data from \"%s\".", qPrintable(compressedPath));
+                            qCDebug(C_STATICCOMPRESSED,
+                                    "Serving brotli compressed data from \"%s\".",
+                                    qPrintable(compressedPath));
                             contentEncoding = QStringLiteral("br");
                         }
                     } else
 #endif
-                    if (acceptEncoding.contains(QLatin1String("gzip"), Qt::CaseInsensitive)) {
-                        compressedPath = locateCacheFile(path, currentDateTime, useZopfli ? Zopfli : Gzip);
+                        if (acceptEncoding.contains(QLatin1String("gzip"), Qt::CaseInsensitive)) {
+                        compressedPath =
+                            locateCacheFile(path, currentDateTime, useZopfli ? Zopfli : Gzip);
                         if (!compressedPath.isEmpty()) {
-                            qCDebug(C_STATICCOMPRESSED, "Serving %s compressed data from \"%s\".", useZopfli ? "zopfli" : "gzip", qPrintable(compressedPath));
+                            qCDebug(C_STATICCOMPRESSED,
+                                    "Serving %s compressed data from \"%s\".",
+                                    useZopfli ? "zopfli" : "gzip",
+                                    qPrintable(compressedPath));
                             contentEncoding = QStringLiteral("gzip");
                         }
-                    } else if (acceptEncoding.contains(QLatin1String("deflate"), Qt::CaseInsensitive)) {
+                    } else if (acceptEncoding.contains(QLatin1String("deflate"),
+                                                       Qt::CaseInsensitive)) {
                         compressedPath = locateCacheFile(path, currentDateTime, Deflate);
                         if (!compressedPath.isEmpty()) {
-                            qCDebug(C_STATICCOMPRESSED, "Serving deflate compressed data from \"%s\".", qPrintable(compressedPath));
+                            qCDebug(C_STATICCOMPRESSED,
+                                    "Serving deflate compressed data from \"%s\".",
+                                    qPrintable(compressedPath));
                             contentEncoding = QStringLiteral("deflate");
                         }
                     }
-
                 }
             }
 
@@ -256,7 +289,9 @@ bool StaticCompressedPrivate::locateCompressedFile(Context *c, const QString &re
     return false;
 }
 
-QString StaticCompressedPrivate::locateCacheFile(const QString &origPath, const QDateTime &origLastModified, Compression compression) const
+QString StaticCompressedPrivate::locateCacheFile(const QString &origPath,
+                                                 const QDateTime &origLastModified,
+                                                 Compression compression) const
 {
     QString compressedPath;
 
@@ -290,7 +325,10 @@ QString StaticCompressedPrivate::locateCacheFile(const QString &origPath, const 
 
     if (onTheFlyCompression) {
 
-        const QString path = cacheDir.absoluteFilePath(QString::fromLatin1(QCryptographicHash::hash(origPath.toUtf8(), QCryptographicHash::Md5).toHex()) + suffix);
+        const QString path = cacheDir.absoluteFilePath(
+            QString::fromLatin1(
+                QCryptographicHash::hash(origPath.toUtf8(), QCryptographicHash::Md5).toHex()) +
+            suffix);
         const QFileInfo info(path);
 
         if (info.exists() && (info.lastModified() > origLastModified)) {
@@ -334,6 +372,7 @@ QString StaticCompressedPrivate::locateCacheFile(const QString &origPath, const 
     return compressedPath;
 }
 
+// clang-format off
 static const quint32 crc_32_tab[] = { /* CRC polynomial 0xedb88320 */
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
     0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -379,34 +418,41 @@ static const quint32 crc_32_tab[] = { /* CRC polynomial 0xedb88320 */
     0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+// clang-format on
 
 quint32 updateCRC32(unsigned char ch, quint32 crc)
 {
     return (crc_32_tab[((crc) ^ (quint8(ch))) & 0xff] ^ ((crc) >> 8));
 }
 
-quint32 crc32buf(const QByteArray& data)
+quint32 crc32buf(const QByteArray &data)
 {
-    return ~std::accumulate(
-        data.begin(),
-        data.end(),
-        quint32(0xFFFFFFFF),
-        [](quint32 oldcrc32, char buf){ return updateCRC32(buf, oldcrc32); });
+    return ~std::accumulate(data.begin(),
+                            data.end(),
+                            quint32(0xFFFFFFFF),
+                            [](quint32 oldcrc32, char buf) { return updateCRC32(buf, oldcrc32); });
 }
 
-bool StaticCompressedPrivate::compressGzip(const QString &inputPath, const QString &outputPath, const QDateTime &origLastModified) const
+bool StaticCompressedPrivate::compressGzip(const QString &inputPath,
+                                           const QString &outputPath,
+                                           const QDateTime &origLastModified) const
 {
-    qCDebug(C_STATICCOMPRESSED, "Compressing \"%s\" with gzip to \"%s\".", qPrintable(inputPath), qPrintable(outputPath));
+    qCDebug(C_STATICCOMPRESSED,
+            "Compressing \"%s\" with gzip to \"%s\".",
+            qPrintable(inputPath),
+            qPrintable(outputPath));
 
     QFile input(inputPath);
     if (Q_UNLIKELY(!input.open(QIODevice::ReadOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open input file to compress with gzip:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open input file to compress with gzip:" << inputPath;
         return false;
     }
 
     const QByteArray data = input.readAll();
     if (Q_UNLIKELY(data.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not read input file or input file is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not read input file or input file is empty:" << inputPath;
         input.close();
         return false;
     }
@@ -416,15 +462,18 @@ bool StaticCompressedPrivate::compressGzip(const QString &inputPath, const QStri
 
     QFile output(outputPath);
     if (Q_UNLIKELY(!output.open(QIODevice::WriteOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open output file to compress with gzip:" << outputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open output file to compress with gzip:" << outputPath;
         return false;
     }
 
     if (Q_UNLIKELY(compressedData.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Failed to compress file with gzip, compressed data is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Failed to compress file with gzip, compressed data is empty:" << inputPath;
         if (output.exists()) {
             if (Q_UNLIKELY(!output.remove())) {
-                qCWarning(C_STATICCOMPRESSED) << "Can not remove invalid compressed gzip file:" << outputPath;
+                qCWarning(C_STATICCOMPRESSED)
+                    << "Can not remove invalid compressed gzip file:" << outputPath;
             }
         }
         return false;
@@ -438,8 +487,7 @@ bool StaticCompressedPrivate::compressGzip(const QString &inputPath, const QStri
     QByteArray header;
     QDataStream headerStream(&header, QIODevice::WriteOnly);
     // prepend a generic 10-byte gzip header (see RFC 1952)
-    headerStream << quint16(0x1f8b)
-                 << quint16(0x0800)
+    headerStream << quint16(0x1f8b) << quint16(0x0800)
                  << quint32(origLastModified.toSecsSinceEpoch())
 #if defined Q_OS_UNIX
                  << quint16(0x0003);
@@ -455,30 +503,38 @@ bool StaticCompressedPrivate::compressGzip(const QString &inputPath, const QStri
     // append 4 bytes uncompressed input size modulo 2^32
     QByteArray footer;
     QDataStream footerStream(&footer, QIODevice::WriteOnly);
-    footerStream << crc32buf(data)
-                 << quint32(data.size());
+    footerStream << crc32buf(data) << quint32(data.size());
 
     if (Q_UNLIKELY(output.write(header + compressedData + footer) < 0)) {
-        qCCritical(C_STATICCOMPRESSED, "Failed to write compressed gzip file \"%s\": %s", qPrintable(inputPath), qPrintable(output.errorString()));
+        qCCritical(C_STATICCOMPRESSED,
+                   "Failed to write compressed gzip file \"%s\": %s",
+                   qPrintable(inputPath),
+                   qPrintable(output.errorString()));
         return false;
     }
 
     return true;
 }
 
-bool StaticCompressedPrivate::compressDeflate(const QString &inputPath, const QString &outputPath) const
+bool StaticCompressedPrivate::compressDeflate(const QString &inputPath,
+                                              const QString &outputPath) const
 {
-    qCDebug(C_STATICCOMPRESSED, "Compressing \"%s\" with deflate to \"%s\".", qPrintable(inputPath), qPrintable(outputPath));
+    qCDebug(C_STATICCOMPRESSED,
+            "Compressing \"%s\" with deflate to \"%s\".",
+            qPrintable(inputPath),
+            qPrintable(outputPath));
 
     QFile input(inputPath);
     if (Q_UNLIKELY(!input.open(QIODevice::ReadOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open input file to compress with deflate:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open input file to compress with deflate:" << inputPath;
         return false;
     }
 
     const QByteArray data = input.readAll();
     if (Q_UNLIKELY(data.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not read input file or input file is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not read input file or input file is empty:" << inputPath;
         input.close();
         return false;
     }
@@ -488,15 +544,18 @@ bool StaticCompressedPrivate::compressDeflate(const QString &inputPath, const QS
 
     QFile output(outputPath);
     if (Q_UNLIKELY(!output.open(QIODevice::WriteOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open output file to compress with deflate:" << outputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open output file to compress with deflate:" << outputPath;
         return false;
     }
 
     if (Q_UNLIKELY(compressedData.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Failed to compress file with deflate, compressed data is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Failed to compress file with deflate, compressed data is empty:" << inputPath;
         if (output.exists()) {
             if (Q_UNLIKELY(!output.remove())) {
-                qCWarning(C_STATICCOMPRESSED) << "Can not remove invalid compressed deflate file:" << outputPath;
+                qCWarning(C_STATICCOMPRESSED)
+                    << "Can not remove invalid compressed deflate file:" << outputPath;
             }
         }
         return false;
@@ -508,7 +567,10 @@ bool StaticCompressedPrivate::compressDeflate(const QString &inputPath, const QS
     compressedData.chop(4);
 
     if (Q_UNLIKELY(output.write(compressedData) < 0)) {
-        qCCritical(C_STATICCOMPRESSED, "Failed to write compressed deflate file \"%s\": %s", qPrintable(inputPath), qPrintable(output.errorString()));
+        qCCritical(C_STATICCOMPRESSED,
+                   "Failed to write compressed deflate file \"%s\": %s",
+                   qPrintable(inputPath),
+                   qPrintable(output.errorString()));
         return false;
     }
 
@@ -516,19 +578,25 @@ bool StaticCompressedPrivate::compressDeflate(const QString &inputPath, const QS
 }
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_ZOPFLI
-bool StaticCompressedPrivate::compressZopfli(const QString &inputPath, const QString &outputPath) const
+bool StaticCompressedPrivate::compressZopfli(const QString &inputPath,
+                                             const QString &outputPath) const
 {
-    qCDebug(C_STATICCOMPRESSED, "Compressing \"%s\" with zopfli to \"%s\".", qPrintable(inputPath), qPrintable(outputPath));
+    qCDebug(C_STATICCOMPRESSED,
+            "Compressing \"%s\" with zopfli to \"%s\".",
+            qPrintable(inputPath),
+            qPrintable(outputPath));
 
     QFile input(inputPath);
     if (Q_UNLIKELY(!input.open(QIODevice::ReadOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open input file to compress with zopfli:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open input file to compress with zopfli:" << inputPath;
         return false;
     }
 
     const QByteArray data = input.readAll();
     if (Q_UNLIKELY(data.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not read input file or input file is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not read input file or input file is empty:" << inputPath;
         input.close();
         return false;
     }
@@ -537,22 +605,32 @@ bool StaticCompressedPrivate::compressZopfli(const QString &inputPath, const QSt
     ZopfliInitOptions(&options);
     options.numiterations = zopfliIterations;
 
-    unsigned char* out = 0;
-    size_t outSize = 0;
+    unsigned char *out = 0;
+    size_t outSize     = 0;
 
-    ZopfliCompress(&options, ZopfliFormat::ZOPFLI_FORMAT_GZIP, reinterpret_cast<const unsigned char *>(data.constData()), data.size(), &out, &outSize);
+    ZopfliCompress(&options,
+                   ZopfliFormat::ZOPFLI_FORMAT_GZIP,
+                   reinterpret_cast<const unsigned char *>(data.constData()),
+                   data.size(),
+                   &out,
+                   &outSize);
 
     bool ok = false;
     if (outSize > 0) {
         QFile output(outputPath);
         if (Q_UNLIKELY(!output.open(QIODevice::WriteOnly))) {
-            qCWarning(C_STATICCOMPRESSED) << "Can not open output file to compress with zopfli:" << outputPath;
+            qCWarning(C_STATICCOMPRESSED)
+                << "Can not open output file to compress with zopfli:" << outputPath;
         } else {
             if (Q_UNLIKELY(output.write(reinterpret_cast<const char *>(out), outSize) < 0)) {
-                qCCritical(C_STATICCOMPRESSED, "Failed to write compressed zopfli file \"%s\": %s", qPrintable(inputPath), qPrintable(output.errorString()));
+                qCCritical(C_STATICCOMPRESSED,
+                           "Failed to write compressed zopfli file \"%s\": %s",
+                           qPrintable(inputPath),
+                           qPrintable(output.errorString()));
                 if (output.exists()) {
                     if (Q_UNLIKELY(!output.remove())) {
-                        qCWarning(C_STATICCOMPRESSED) << "Can not remove invalid compressed zopfli file:" << outputPath;
+                        qCWarning(C_STATICCOMPRESSED)
+                            << "Can not remove invalid compressed zopfli file:" << outputPath;
                     }
                 }
             } else {
@@ -560,7 +638,8 @@ bool StaticCompressedPrivate::compressZopfli(const QString &inputPath, const QSt
             }
         }
     } else {
-        qCWarning(C_STATICCOMPRESSED) << "Failed to compress file with zopfli, compressed data is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Failed to compress file with zopfli, compressed data is empty:" << inputPath;
     }
 
     free(out);
@@ -570,19 +649,25 @@ bool StaticCompressedPrivate::compressZopfli(const QString &inputPath, const QSt
 #endif
 
 #ifdef CUTELYST_STATICCOMPRESSED_WITH_BROTLI
-bool StaticCompressedPrivate::compressBrotli(const QString &inputPath, const QString &outputPath) const
+bool StaticCompressedPrivate::compressBrotli(const QString &inputPath,
+                                             const QString &outputPath) const
 {
-    qCDebug(C_STATICCOMPRESSED, "Compressing \"%s\" with brotli to \"%s\".", qPrintable(inputPath), qPrintable(outputPath));
+    qCDebug(C_STATICCOMPRESSED,
+            "Compressing \"%s\" with brotli to \"%s\".",
+            qPrintable(inputPath),
+            qPrintable(outputPath));
 
     QFile input(inputPath);
     if (Q_UNLIKELY(!input.open(QIODevice::ReadOnly))) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not open input file to compress with brotli:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not open input file to compress with brotli:" << inputPath;
         return false;
     }
 
     const QByteArray data = input.readAll();
     if (Q_UNLIKELY(data.isEmpty())) {
-        qCWarning(C_STATICCOMPRESSED) << "Can not read input file or input file is empty:" << inputPath;
+        qCWarning(C_STATICCOMPRESSED)
+            << "Can not read input file or input file is empty:" << inputPath;
         return false;
     }
 
@@ -594,34 +679,54 @@ bool StaticCompressedPrivate::compressBrotli(const QString &inputPath, const QSt
     if (Q_LIKELY(outSize > 0)) {
         const uint8_t *in = (const uint8_t *) data.constData();
         uint8_t *out;
-        out = (uint8_t *) malloc(sizeof(uint8_t) * (outSize+1));
+        out = (uint8_t *) malloc(sizeof(uint8_t) * (outSize + 1));
         if (Q_LIKELY(out != nullptr)) {
-            BROTLI_BOOL status = BrotliEncoderCompress(brotliQualityLevel, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, data.size(), in, &outSize, out);
+            BROTLI_BOOL status = BrotliEncoderCompress(brotliQualityLevel,
+                                                       BROTLI_DEFAULT_WINDOW,
+                                                       BROTLI_DEFAULT_MODE,
+                                                       data.size(),
+                                                       in,
+                                                       &outSize,
+                                                       out);
             if (Q_LIKELY(status == BROTLI_TRUE)) {
                 QFile output(outputPath);
                 if (Q_LIKELY(output.open(QIODevice::WriteOnly))) {
                     if (Q_LIKELY(output.write(reinterpret_cast<const char *>(out), outSize) > -1)) {
                         ok = true;
                     } else {
-                        qCWarning(C_STATICCOMPRESSED, "Failed to write brotli compressed data to output file \"%s\": %s", qPrintable(outputPath), qPrintable(output.errorString()));
+                        qCWarning(
+                            C_STATICCOMPRESSED,
+                            "Failed to write brotli compressed data to output file \"%s\": %s",
+                            qPrintable(outputPath),
+                            qPrintable(output.errorString()));
                         if (output.exists()) {
                             if (Q_UNLIKELY(!output.remove())) {
-                                qCWarning(C_STATICCOMPRESSED) << "Can not remove invalid compressed brotli file:" << outputPath;
+                                qCWarning(C_STATICCOMPRESSED)
+                                    << "Can not remove invalid compressed brotli file:"
+                                    << outputPath;
                             }
                         }
                     }
                 } else {
-                    qCWarning(C_STATICCOMPRESSED, "Failed to open output file for brotli compression: %s", qPrintable(outputPath));
+                    qCWarning(C_STATICCOMPRESSED,
+                              "Failed to open output file for brotli compression: %s",
+                              qPrintable(outputPath));
                 }
             } else {
-                qCWarning(C_STATICCOMPRESSED, "Failed to compress \"%s\" with brotli.", qPrintable(inputPath));
+                qCWarning(C_STATICCOMPRESSED,
+                          "Failed to compress \"%s\" with brotli.",
+                          qPrintable(inputPath));
             }
             free(out);
         } else {
-            qCWarning(C_STATICCOMPRESSED, "Can not allocate needed output buffer of size %lu for brotli compression.", sizeof(uint8_t) * (outSize+1));
+            qCWarning(C_STATICCOMPRESSED,
+                      "Can not allocate needed output buffer of size %lu for brotli compression.",
+                      sizeof(uint8_t) * (outSize + 1));
         }
     } else {
-        qCWarning(C_STATICCOMPRESSED, "Needed output buffer too large to compress input of size %lu with brotli.", static_cast<size_t>(data.size()));
+        qCWarning(C_STATICCOMPRESSED,
+                  "Needed output buffer too large to compress input of size %lu with brotli.",
+                  static_cast<size_t>(data.size()));
     }
 
     return ok;

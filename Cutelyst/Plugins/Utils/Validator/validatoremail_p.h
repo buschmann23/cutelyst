@@ -21,11 +21,16 @@ struct ValidatorEmailDiagnoseStruct {
 class ValidatorEmailPrivate : public ValidatorRulePrivate
 {
 public:
-    ValidatorEmailPrivate(const QString &f, ValidatorEmail::Category thresh, ValidatorEmail::Options opts, const ValidatorMessages &m, const QString &dvk) :
-        ValidatorRulePrivate(f, m, dvk),
-        threshold(thresh),
-        options(opts)
-    {}
+    ValidatorEmailPrivate(const QString &f,
+                          ValidatorEmail::Category thresh,
+                          ValidatorEmail::Options opts,
+                          const ValidatorMessages &m,
+                          const QString &dvk)
+        : ValidatorRulePrivate(f, m, dvk)
+        , threshold(thresh)
+        , options(opts)
+    {
+    }
 
     enum EmailPart {
         ComponentLocalpart  = 0,
@@ -37,13 +42,15 @@ public:
         ContextQuotedPair   = 6
     };
 
-    static bool checkEmail(const QString &address, ValidatorEmail::Options options = ValidatorEmail::NoOption, ValidatorEmail::Category threshold = ValidatorEmail::RFC5321, ValidatorEmailDiagnoseStruct *diagnoseStruct = nullptr);
+    static bool checkEmail(const QString &address,
+                           ValidatorEmail::Options options              = ValidatorEmail::NoOption,
+                           ValidatorEmail::Category threshold           = ValidatorEmail::RFC5321,
+                           ValidatorEmailDiagnoseStruct *diagnoseStruct = nullptr);
 
     ValidatorEmail::Category threshold = ValidatorEmail::RFC5321;
-    ValidatorEmail::Options options = ValidatorEmail::NoOption;
+    ValidatorEmail::Options options    = ValidatorEmail::NoOption;
 };
 
-}
+} // namespace Cutelyst
 
-#endif //CUTELYSTVALIDATOREMAIL_P_H
-
+#endif // CUTELYSTVALIDATOREMAIL_P_H

@@ -5,12 +5,12 @@
 #ifndef AUTHENTICATIONUSER_H
 #define AUTHENTICATIONUSER_H
 
-#include <QDataStream>
-#include <QVariantMap>
-
 #include <Cutelyst/cutelyst_global.h>
 #include <Cutelyst/paramsmultimap.h>
 #include <Cutelyst/plugin.h>
+
+#include <QDataStream>
+#include <QVariantMap>
 
 namespace Cutelyst {
 
@@ -63,9 +63,7 @@ public:
 
     inline QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
 
-    inline operator QVariant() const {
-        return QVariant::fromValue(m_data);
-    }
+    inline operator QVariant() const { return QVariant::fromValue(m_data); }
 
 protected:
     QVariantMap m_data;
@@ -91,12 +89,13 @@ QVariant AuthenticationUser::value(const QString &key, const QVariant &defaultVa
     return m_data.value(key, defaultValue);
 }
 
-}
+} // namespace Cutelyst
 
 Q_DECLARE_METATYPE(Cutelyst::AuthenticationUser)
 QDataStream &operator<<(QDataStream &out, const Cutelyst::AuthenticationUser &myObj);
 QDataStream &operator>>(QDataStream &in, Cutelyst::AuthenticationUser &myObj);
 
-QDebug CUTELYST_PLUGIN_AUTHENTICATION_EXPORT operator<<(QDebug dbg, const Cutelyst::AuthenticationUser &user);
+QDebug CUTELYST_PLUGIN_AUTHENTICATION_EXPORT operator<<(QDebug dbg,
+                                                        const Cutelyst::AuthenticationUser &user);
 
 #endif // AUTHENTICATIONUSER_H

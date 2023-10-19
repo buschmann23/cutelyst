@@ -3,30 +3,31 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "localserver.h"
-#include "socket.h"
+
 #include "protocol.h"
 #include "server.h"
+#include "socket.h"
 
 #include <Cutelyst/Engine>
 
-#include <QSocketNotifier>
 #include <QDateTime>
+#include <QSocketNotifier>
 
 #ifdef Q_OS_UNIX
-//#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-//#include <netinet/in.h>
-#include <fcntl.h>
+// #include <sys/types.h>
+#    include <sys/socket.h>
+#    include <sys/un.h>
+// #include <netinet/in.h>
+#    include <fcntl.h>
 
 static inline int cutelyst_safe_accept(int s, struct sockaddr *addr, uint *addrlen, int flags = 0);
 #endif
 
 using namespace Cutelyst;
 
-
-LocalServer::LocalServer(Server *wsgi, QObject *parent) : QLocalServer(parent)
-  , m_wsgi(wsgi)
+LocalServer::LocalServer(Server *wsgi, QObject *parent)
+    : QLocalServer(parent)
+    , m_wsgi(wsgi)
 {
 }
 
@@ -42,10 +43,13 @@ LocalServer *LocalServer::createServer(CWsgiEngine *engine) const
     server->m_engine = engine;
 
 #ifdef Q_OS_UNIX
-    server->m_socket = socket();
+    server->m_socket         = socket();
     server->m_socketNotifier = new QSocketNotifier(server->m_socket, QSocketNotifier::Read, server);
     server->m_socketNotifier->setEnabled(false);
-    connect(server->m_socketNotifier, &QSocketNotifier::activated, server, &LocalServer::socketNotifierActivated);
+    connect(server->m_socketNotifier,
+            &QSocketNotifier::activated,
+            server,
+            &LocalServer::socketNotifierActivated);
 #else
     if (server->listen(socket())) {
         server->pauseAccepting();
@@ -82,14 +86,14 @@ void LocalServer::resumeAccepting()
 
 void LocalServer::incomingConnection(quintptr handle)
 {
-    auto sock = new LocalSocket(m_engine, this);
+    auto sock       = new LocalSocket(m_engine, this);
     sock->protoData = m_protocol->createData(sock);
 
-    connect(sock, &QIODevice::readyRead, [sock] () {
+    connect(sock, &QIODevice::readyRead, [sock]() {
         sock->timeout = false;
         sock->proto->parse(sock, sock);
     });
-    connect(sock, &LocalSocket::finished, this, [this, sock] () {
+    connect(sock, &LocalSocket::finished, this, [this, sock]() {
         sock->deleteLater();
         if (--m_processing == 0) {
             m_engine->stopSocketTimeout();
@@ -127,9 +131,9 @@ void LocalServer::shutdown()
     } else {
         const auto childrenL = children();
         for (auto child : childrenL) {
-            auto socket = qobject_cast<LocalSocket*>(child);
+            auto socket = qobject_cast<LocalSocket *>(child);
             if (socket) {
-                connect(socket, &LocalSocket::finished, this, [this] () {
+                connect(socket, &LocalSocket::finished, this, [this]() {
                     if (!m_processing) {
                         m_engine->serverShutdown();
                     }
@@ -145,7 +149,7 @@ void LocalServer::timeoutConnections()
     if (m_processing) {
         const auto childrenL = children();
         for (auto child : childrenL) {
-            auto socket = qobject_cast<LocalSocket*>(child);
+            auto socket = qobject_cast<LocalSocket *>(child);
             if (socket && !socket->processing && socket->state() == QLocalSocket::ConnectedState) {
                 if (socket->timeout) {
                     socket->connectionClose();
@@ -171,7 +175,7 @@ QSocketNotifier *LocalServer::socketDescriptorNotifier() const
     // if this breaks it we fail with an error.
     const auto childrenL = children();
     for (auto child : childrenL) {
-        auto notifier = qobject_cast<QSocketNotifier*>(child);
+        auto notifier = qobject_cast<QSocketNotifier *>(child);
         if (notifier) {
             ret = notifier;
             break;
@@ -189,7 +193,8 @@ void LocalServer::socketNotifierActivated()
 
     ::sockaddr_un addr;
     uint length = sizeof(sockaddr_un);
-    int connectedSocket = cutelyst_safe_accept(int(m_socket), reinterpret_cast<sockaddr *>(&addr), &length);
+    int connectedSocket =
+        cutelyst_safe_accept(int(m_socket), reinterpret_cast<sockaddr *>(&addr), &length);
     if (-1 != connectedSocket) {
         incomingConnection(quintptr(connectedSocket));
     }
@@ -201,18 +206,18 @@ static inline int cutelyst_safe_accept(int s, struct sockaddr *addr, uint *addrl
     Q_ASSERT((flags & ~O_NONBLOCK) == 0);
 
     int fd;
-#ifdef QT_THREADSAFE_CLOEXEC
+#    ifdef QT_THREADSAFE_CLOEXEC
     // use accept4
     int sockflags = SOCK_CLOEXEC;
     if (flags & O_NONBLOCK)
         sockflags |= SOCK_NONBLOCK;
-# if defined(Q_OS_NETBSD)
+#        if defined(Q_OS_NETBSD)
     fd = ::paccept(s, addr, static_cast<socklen_t *>(addrlen), NULL, sockflags);
-# else
+#        else
     fd = ::accept4(s, addr, static_cast<socklen_t *>(addrlen), sockflags);
-# endif
+#        endif
     return fd;
-#else
+#    else
     fd = ::accept(s, addr, static_cast<socklen_t *>(addrlen));
     if (fd == -1)
         return -1;
@@ -224,7 +229,7 @@ static inline int cutelyst_safe_accept(int s, struct sockaddr *addr, uint *addrl
         ::fcntl(fd, F_SETFL, ::fcntl(fd, F_GETFL) | O_NONBLOCK);
 
     return fd;
-#endif
+#    endif
 }
 #endif // Q_OS_UNIX
 

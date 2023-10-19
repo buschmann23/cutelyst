@@ -4,15 +4,15 @@
  */
 #include "sessionstorefile.h"
 
-#include <Cutelyst/Context>
 #include <Cutelyst/Application>
+#include <Cutelyst/Context>
 
+#include <QCoreApplication>
+#include <QDataStream>
 #include <QDir>
 #include <QFile>
 #include <QLockFile>
-#include <QDataStream>
 #include <QLoggingCategory>
-#include <QCoreApplication>
 
 using namespace Cutelyst;
 
@@ -23,23 +23,29 @@ Q_LOGGING_CATEGORY(C_SESSION_FILE, "cutelyst.plugin.sessionfile", QtWarningMsg)
 
 static QVariantHash loadSessionData(Context *c, const QString &sid);
 
-SessionStoreFile::SessionStoreFile(QObject *parent) : SessionStore(parent)
+SessionStoreFile::SessionStoreFile(QObject *parent)
+    : SessionStore(parent)
 {
-
 }
 
 SessionStoreFile::~SessionStoreFile()
 {
 }
 
-QVariant SessionStoreFile::getSessionData(Context *c, const QString &sid, const QString &key, const QVariant &defaultValue)
+QVariant SessionStoreFile::getSessionData(Context *c,
+                                          const QString &sid,
+                                          const QString &key,
+                                          const QVariant &defaultValue)
 {
     const QVariantHash data = loadSessionData(c, sid);
 
     return data.value(key, defaultValue);
 }
 
-bool SessionStoreFile::storeSessionData(Context *c, const QString &sid, const QString &key, const QVariant &value)
+bool SessionStoreFile::storeSessionData(Context *c,
+                                        const QString &sid,
+                                        const QString &key,
+                                        const QVariant &value)
 {
     QVariantHash data = loadSessionData(c, sid);
 
@@ -63,10 +69,8 @@ bool SessionStoreFile::deleteSessionData(Context *c, const QString &sid, const Q
 
 static QString rootPath()
 {
-    static QString rootPath = QDir::tempPath()
-            + u'/'
-            + QCoreApplication::applicationName()
-            + u"/session/data";
+    static QString rootPath =
+        QDir::tempPath() + u'/' + QCoreApplication::applicationName() + u"/session/data";
     return rootPath;
 }
 
@@ -104,7 +108,7 @@ QVariantHash loadSessionData(Context *c, const QString &sid)
     }
 
     // Commit data when Context gets deleted
-    QObject::connect(c->app(), &Application::afterDispatch, c, [c,file] {
+    QObject::connect(c->app(), &Application::afterDispatch, c, [c, file] {
         if (!c->stash(SESSION_STORE_FILE_SAVE).toBool()) {
             return;
         }

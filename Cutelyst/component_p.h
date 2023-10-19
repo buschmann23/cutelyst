@@ -14,8 +14,6 @@ namespace Cutelyst {
 class ComponentPrivate
 {
 public:
-    virtual ~ComponentPrivate() = default;
-
     QString name;
     QString reverse;
     QStack<Component *> beforeRoles;
@@ -25,6 +23,6 @@ public:
     bool proccessRoles = false;
 };
 
-}
+} // namespace Cutelyst
 
 #endif // CUTELYST_COMPONENT_P_H
