@@ -51,19 +51,8 @@ void Select::setSize(int size)
 
 QQmlListProperty<Cutelyst::SelectContent> Select::options()
 {
-    return QQmlListProperty<SelectContent>(this, this,
-                                      [](QQmlListProperty<SelectContent>* list, SelectContent *content){
-        reinterpret_cast<Select*>(list->data)->appendContent(content);
-    },
-                                      [](QQmlListProperty<SelectContent>* list){
-        return reinterpret_cast<Select*>(list->data)->contentCount();
-    },
-                                      [](QQmlListProperty<SelectContent> *list, int idx){
-        return reinterpret_cast<Select*>(list->data)->content(idx);
-    },
-                                      [](QQmlListProperty<SelectContent> *list){
-        reinterpret_cast<Select*>(list->data)->clearContent();
-    });
+    Q_D(Select);
+    return {this, &d->content};
 }
 
 void Select::appendContent(SelectContent *content)
@@ -72,18 +61,17 @@ void Select::appendContent(SelectContent *content)
     d->content.push_back(content);
 }
 
-int Select::contentCount() const
+QList<SelectContent*>::size_type Select::contentCount() const
 {
     Q_D(const Select);
     return static_cast<int>(d->content.size());
 }
 
-SelectContent* Select::content(int idx) const
+SelectContent* Select::content(QList<SelectContent*>::size_type idx) const
 {
     Q_D(const Select);
-    std::vector<SelectContent*>::size_type _idx = static_cast<std::vector<SelectContent*>::size_type>(idx);
-    if (idx > -1 && _idx < d->content.size()) {
-        return d->content.at(_idx);
+    if (idx < d->content.size()) {
+        return d->content.at(idx);
     } else {
         return nullptr;
     }
@@ -96,7 +84,7 @@ void Select::clearContent()
     d->content.clear();
 }
 
-std::vector<SelectContent*> Select::contentList() const
+QList<SelectContent*> Select::contentList() const
 {
     Q_D(const Select);
     return d->content;

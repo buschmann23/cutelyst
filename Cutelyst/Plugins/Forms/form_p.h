@@ -11,8 +11,8 @@ class FormPrivate : public FormHtmlElementPrivate
 public:
     FormPrivate(Form *q);
 
-    std::vector<Fieldset *> fieldsets;
-    std::vector<Button *> buttons;
+    QList<Fieldset *> fieldsets;
+    QList<Button *> buttons;
     QUrl action;
     QStringList acceptCharset;
     QString name;

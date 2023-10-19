@@ -27,19 +27,8 @@ Optgroup::~Optgroup()
 
 QQmlListProperty<Cutelyst::Option> Optgroup::options()
 {
-    return QQmlListProperty<Option>(this, this,
-                                      [](QQmlListProperty<Option>* list, Option *option){
-        reinterpret_cast<Optgroup*>(list->data)->appendOption(option);
-    },
-                                      [](QQmlListProperty<Option>* list){
-        return reinterpret_cast<Optgroup*>(list->data)->optionCount();
-    },
-                                      [](QQmlListProperty<Option> *list, int idx){
-        return reinterpret_cast<Optgroup*>(list->data)->option(idx);
-    },
-                                      [](QQmlListProperty<Option> *list){
-        reinterpret_cast<Optgroup*>(list->data)->clearOptions();
-    });
+    Q_D(Optgroup);
+    return {this, &d->options};
 }
 
 void Optgroup::appendOption(Option *option)
@@ -48,18 +37,17 @@ void Optgroup::appendOption(Option *option)
     d->options.push_back(option);
 }
 
-int Optgroup::optionCount() const
+QList<Option*>::size_type Optgroup::optionCount() const
 {
     Q_D(const Optgroup);
     return static_cast<int>(d->options.size());
 }
 
-Option* Optgroup::option(int idx) const
+Option* Optgroup::option(QList<Option*>::size_type idx) const
 {
     Q_D(const Optgroup);
-    const std::vector<Option*>::size_type _idx = static_cast<std::vector<Option*>::size_type>(idx);
-    if (idx > -1 && _idx < d->options.size()) {
-        return d->options.at(_idx);
+    if (idx < d->options.size()) {
+        return d->options.at(idx);
     } else {
         return nullptr;
     }
@@ -72,7 +60,7 @@ void Optgroup::clearOptions()
     d->options.clear();
 }
 
-std::vector<Option*> Optgroup::optionList() const
+QList<Option*> Optgroup::optionList() const
 {
     Q_D(const Optgroup);
     return d->options;

@@ -11,7 +11,7 @@ class SelectPrivate : public FieldPrivate
 public:
     SelectPrivate(Select *q);
 
-    std::vector<SelectContent*> content;
+    QList<SelectContent*> content;
     int size = 0;
     bool multiple = false;
 

@@ -98,17 +98,17 @@ public:
 
     QQmlListProperty<Cutelyst::Fieldset> fieldsets();
     void appendFieldset(Fieldset *fieldset);
-    int fieldsetCount() const;
-    Fieldset *fieldset(int idx) const;
+    QList<Fieldset*>::size_type fieldsetCount() const;
+    Fieldset *fieldset(QList<Fieldset*>::size_type idx) const;
     void clearFieldsets();
-    std::vector<Fieldset*> fieldsetList() const;
+    QList<Fieldset*> fieldsetList() const;
 
     QQmlListProperty<Cutelyst::Button> buttons();
     void appendButton(Button *button);
-    int buttonCount() const;
-    Button *button(int idx) const;
+    QList<Button*>::size_type buttonCount() const;
+    Button *button(QList<Button*>::size_type idx) const;
     void clearButtons();
-    std::vector<Button*> buttonList() const;
+    QList<Button*> buttonList() const;
 
 protected:
     Form(FormPrivate &dd, QObject *parent = nullptr);

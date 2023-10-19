@@ -11,7 +11,7 @@ class FieldsetPrivate : public FormHtmlElementPrivate
 public:
     FieldsetPrivate(Fieldset *q);
 
-    std::vector<Field*> fields;
+    QList<Field*> fields;
     QString form;
     QString name;
     QString label;

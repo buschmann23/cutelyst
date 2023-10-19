@@ -87,19 +87,8 @@ void Fieldset::setLegend(Cutelyst::Legend *legend)
 
 QQmlListProperty<Cutelyst::Field> Fieldset::fields()
 {
-    return QQmlListProperty<Field>(this, this,
-                                      [](QQmlListProperty<Field>* list, Field *field){
-        reinterpret_cast<Fieldset*>(list->data)->appendField(field);
-    },
-                                      [](QQmlListProperty<Field>* list){
-        return reinterpret_cast<Fieldset*>(list->data)->fieldCount();
-    },
-                                      [](QQmlListProperty<Field> *list, int idx){
-        return reinterpret_cast<Fieldset*>(list->data)->field(idx);
-    },
-                                      [](QQmlListProperty<Field> *list){
-        reinterpret_cast<Fieldset*>(list->data)->clearFields();
-    });
+    Q_D(Fieldset);
+    return {this, &d->fields};
 }
 
 void Fieldset::appendField(Field *field)
@@ -108,18 +97,17 @@ void Fieldset::appendField(Field *field)
     d->fields.push_back(field);
 }
 
-int Fieldset::fieldCount() const
+QList<Field*>::size_type Fieldset::fieldCount() const
 {
     Q_D(const Fieldset);
-    return static_cast<int>(d->fields.size());
+    return d->fields.size();
 }
 
-Field* Fieldset::field(int idx) const
+Field* Fieldset::field(QList<Field*>::size_type idx) const
 {
     Q_D(const Fieldset);
-    std::vector<Field*>::size_type _idx = static_cast<std::vector<Field*>::size_type>(idx);
-    if (idx > -1 && _idx < d->fields.size()) {
-        return d->fields.at(_idx);
+    if (idx < d->fields.size()) {
+        return d->fields.at(idx);
     } else {
         return nullptr;
     }
@@ -132,7 +120,7 @@ void Fieldset::clearFields()
     d->fields.clear();
 }
 
-std::vector<Field*> Fieldset::fieldList() const
+QList<Field*> Fieldset::fieldList() const
 {
     Q_D(const Fieldset);
     return d->fields;

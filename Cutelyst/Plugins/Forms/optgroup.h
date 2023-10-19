@@ -23,10 +23,10 @@ public:
 
     QQmlListProperty<Cutelyst::Option> options();
     void appendOption(Option *option);
-    int optionCount() const;
-    Option *option(int idx) const;
+    QList<Option*>::size_type optionCount() const;
+    Option *option(QList<Option*>::size_type idx) const;
     void clearOptions();
-    std::vector<Option*> optionList() const;
+    QList<Option*> optionList() const;
 
 protected:
     Optgroup(OptgroupPrivate &dd, QObject *parent = nullptr);

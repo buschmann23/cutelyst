@@ -31,10 +31,10 @@ public:
 
     QQmlListProperty<Cutelyst::SelectContent> options();
     void appendContent(SelectContent *content);
-    int contentCount() const;
-    SelectContent *content(int idx) const;
+    QList<SelectContent*>::size_type contentCount() const;
+    SelectContent *content(QList<SelectContent*>::size_type idx) const;
     void clearContent();
-    std::vector<SelectContent*> contentList() const;
+    QList<SelectContent *> contentList() const;
 
 protected:
     Select(SelectPrivate &dd, QObject *parent = nullptr);

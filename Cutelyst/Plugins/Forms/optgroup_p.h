@@ -11,7 +11,7 @@ class OptgroupPrivate : public SelectContentPrivate
 public:
     OptgroupPrivate(Optgroup *q);
 
-    std::vector<Option*> options;
+    QList<Option*> options;
 
 private:
     Q_DECLARE_PUBLIC(Optgroup)

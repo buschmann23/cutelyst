@@ -159,19 +159,8 @@ void Form::setType(Cutelyst::Form::Type type)
 
 QQmlListProperty<Cutelyst::Fieldset> Form::fieldsets()
 {
-    return QQmlListProperty<Fieldset>(this, this,
-                                      [](QQmlListProperty<Fieldset>* list, Fieldset *fieldset){
-        reinterpret_cast<Form*>(list->data)->appendFieldset(fieldset);
-    },
-                                      [](QQmlListProperty<Fieldset>* list){
-        return reinterpret_cast<Form*>(list->data)->fieldsetCount();
-    },
-                                      [](QQmlListProperty<Fieldset> *list, int idx){
-        return reinterpret_cast<Form*>(list->data)->fieldset(idx);
-    },
-                                      [](QQmlListProperty<Fieldset> *list){
-        reinterpret_cast<Form*>(list->data)->clearFieldsets();
-    });
+    Q_D(Form);
+    return {this, &d->fieldsets};
 }
 
 void Form::appendFieldset(Fieldset *fieldset)
@@ -180,18 +169,17 @@ void Form::appendFieldset(Fieldset *fieldset)
     d->fieldsets.push_back(fieldset);
 }
 
-int Form::fieldsetCount() const
+QList<Fieldset*>::size_type Form::fieldsetCount() const
 {
     Q_D(const Form);
-    return static_cast<int>(d->fieldsets.size());
+    return d->fieldsets.size();
 }
 
-Fieldset* Form::fieldset(int idx) const
+Fieldset* Form::fieldset(QList<Fieldset*>::size_type idx) const
 {
     Q_D(const Form);
-    std::vector<Fieldset*>::size_type _idx = static_cast<std::vector<Fieldset*>::size_type>(idx);
-    if (idx > -1 && _idx < d->fieldsets.size()) {
-        return d->fieldsets.at(_idx);
+    if (idx < d->fieldsets.size()) {
+        return d->fieldsets.at(idx);
     } else {
         return nullptr;
     }
@@ -204,7 +192,7 @@ void Form::clearFieldsets()
     d->fieldsets.clear();
 }
 
-std::vector<Fieldset*> Form::fieldsetList() const
+QList<Fieldset*> Form::fieldsetList() const
 {
     Q_D(const Form);
     return d->fieldsets;
@@ -212,19 +200,8 @@ std::vector<Fieldset*> Form::fieldsetList() const
 
 QQmlListProperty<Cutelyst::Button> Form::buttons()
 {
-    return QQmlListProperty<Button>(this, this,
-                                      [](QQmlListProperty<Button>* list, Button *button){
-        reinterpret_cast<Form*>(list->data)->appendButton(button);
-    },
-                                      [](QQmlListProperty<Button>* list){
-        return reinterpret_cast<Form*>(list->data)->buttonCount();
-    },
-                                      [](QQmlListProperty<Button> *list, int idx){
-        return reinterpret_cast<Form*>(list->data)->button(idx);
-    },
-                                      [](QQmlListProperty<Button> *list){
-        reinterpret_cast<Form*>(list->data)->clearButtons();
-    });
+    Q_D(Form);
+    return {this, &d->buttons};
 }
 
 void Form::appendButton(Button *button)
@@ -233,18 +210,17 @@ void Form::appendButton(Button *button)
     d->buttons.push_back(button);
 }
 
-int Form::buttonCount() const
+QList<Button*>::size_type Form::buttonCount() const
 {
     Q_D(const Form);
-    return static_cast<int>(d->buttons.size());
+    return d->buttons.size();
 }
 
-Button* Form::button(int idx) const
+Button* Form::button(QList<Button*>::size_type idx) const
 {
     Q_D(const Form);
-    std::vector<Button*>::size_type _idx = static_cast<std::vector<Button*>::size_type>(idx);
-    if (idx > -1 && _idx < d->buttons.size()) {
-        return d->buttons.at(_idx);
+    if (idx < d->buttons.size()) {
+        return d->buttons.at(idx);
     } else {
         return nullptr;
     }
@@ -257,7 +233,7 @@ void Form::clearButtons()
     d->buttons.clear();
 }
 
-std::vector<Button*> Form::buttonList() const
+QList<Button*> Form::buttonList() const
 {
     Q_D(const Form);
     return d->buttons;

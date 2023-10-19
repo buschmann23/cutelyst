@@ -44,10 +44,10 @@ public:
 
     QQmlListProperty<Cutelyst::Field> fields();
     void appendField(Field *field);
-    int fieldCount() const;
-    Field *field(int idx) const;
+    QList<Field*>::size_type fieldCount() const;
+    Field *field(QList<Field*>::size_type idx) const;
     void clearFields();
-    std::vector<Field*> fieldList() const;
+    QList<Field*> fieldList() const;
 
 protected:
     Fieldset(FieldsetPrivate &dd, QObject *parent = nullptr);
