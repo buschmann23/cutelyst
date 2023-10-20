@@ -29,10 +29,10 @@ class FormsPrivate;
  * \class Forms forms.h <Cutelyst/Plugins/Forms>
  * \brief The Forms plugin class.
  */
-class CUTELYST_PLUGIN_FORMS_EXPORT Forms : public Plugin
+class CUTELYST_PLUGIN_FORMS_EXPORT Forms : public Plugin // clazy::exclude(ctor-missing-parent-argument)
 {
     Q_OBJECT
-    Q_DECLARE_PRIVATE(Forms)
+    Q_DECLARE_PRIVATE(Forms) // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     Q_DISABLE_COPY(Forms)
 public:
     /*!
@@ -43,7 +43,7 @@ public:
     /*!
      * \brief Destroys the %Forms object.
      */
-    virtual ~Forms() override;
+    ~Forms() override;
 
     /*!
      * \brief Adds an import \a path to the internal QQmlEngine.
@@ -54,7 +54,7 @@ public:
      * \brief Returns the current list of import paths used by the internal QQmlEngine.
      * \sa addImportPath(), QQmlEngine::importPathList()
      */
-    QStringList importPaths() const;
+    [[nodiscard]] QStringList importPaths() const;
 
     /*!
      * \brief Sets the list of include \a paths.
@@ -71,7 +71,7 @@ public:
      *
      * Use setIncludePahts() to set the list of paths.
      */
-    QStringList includePaths() const;
+    [[nodiscard]] QStringList includePaths() const;
 
     static Form* getForm(const QString &name, Context *c);
 
@@ -79,7 +79,7 @@ protected:
     /*!
      * \brief Sets the %Forms plugin up to be used by \a app.
      */
-    virtual bool setup(Application *app) override;
+    bool setup(Application *app) override;
 
 private:
     FormsPrivate *const d_ptr;
