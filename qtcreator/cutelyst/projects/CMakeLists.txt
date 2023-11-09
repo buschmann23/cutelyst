@@ -1,12 +1,13 @@
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+
 project(%{ProjectName})
 
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 if (POLICY CMP0043)
   cmake_policy(SET CMP0043 NEW)
 endif()
 
-find_package(Qt5 COMPONENTS Core Network REQUIRED)
-find_package(Cutelyst3Qt5 REQUIRED)
+find_package(Qt6 COMPONENTS Core Network REQUIRED)
+find_package(Cutelyst4Qt6 REQUIRED)
 
 # Auto generate moc files
 set(CMAKE_AUTOMOC ON)
